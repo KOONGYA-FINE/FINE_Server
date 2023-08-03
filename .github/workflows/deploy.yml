@@ -2,9 +2,9 @@ name: Django EC2 Deploy
 
 on:
   push:
-    branches: [ main, setting ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, setting ]
+    branches: [ main ]
 
 jobs:
   ci:
@@ -37,3 +37,28 @@ jobs:
     - name: Run Tests
       run: |
         python manage.py test
+
+  cd:
+    name: 'Django CD'
+    needs: ci
+    runs-on: ubuntu-20.04
+    steps:
+    - name: EC2 ssh connection test
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_PEM }}
+        command_timeout: 3m
+        script: |
+          sudo apt-get update
+          sudo apt-get -y upgrade
+          cd /home/ubuntu/FINE_Server
+          source venv/bin/activate
+          git pull
+          sudo lsof -t -i tcp:8000 | xargs kill -9
+          pip install -r requirements.txt
+          python manage.py makemigrations	
+          python manage.py migrate
+          nohup gunicorn --bind 0.0.0.0:8000 config.wsgi > nohup.out 2> nohup.err < /dev/null &
+          exit 0
