@@ -2,9 +2,9 @@ name: Django EC2 Deploy
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, setting ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, setting ]
 
 jobs:
   ci:
