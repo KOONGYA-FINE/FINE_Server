@@ -1,12 +1,3 @@
----
-name: Feature request
-about: Feature 작업 사항 작성
-title: ''
-labels: ''
-assignees: ''
-
----
-
 ## 📌 Description
 기능 설명을 작성해주세요
 
