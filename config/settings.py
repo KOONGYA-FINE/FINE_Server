@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os, json
-import os, json
 from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -50,11 +49,16 @@ DJANGO_APPS = [
 ]
 
 PROJECT_APPS = [
+    'accounts',
     'posts',
+    'places',
+    'profiles',
+    'reviews',
 ]
 
 THIRD_PARTY_APPS = [
     'corsheaders',
+    'rest_framework',
 ]
 
 
@@ -152,3 +156,6 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# User setting
+AUTH_USER_MODEL = 'accounts.User'
