@@ -16,29 +16,18 @@ from rest_framework import status
 from django.http import Http404
 
 
-# User의 nation을 비교해서 한국인이면 True 반환
-# @login_required
-# def is_korean(request):
-#     user_nation = request.user.nation
-
-#     if user_nation and user_nation.name == "Korea" or "korea" or "한국" or "대한민국":
-#         return True
-#     else:
-#         return False
-
-
 # PostList(전체)
 class PostList(APIView):
     def get(self, request):
-        # if is_korean(request):
-        #     posts = Post_KR.objects.all()
-        # else:
-        #     posts = Post.objects.all()
-        print(request.user)
+        # 영어 posts
+        posts_en = Post.objects.all()
+        serializer_en = PostSerializer(posts_en, many=True)
+        # 한국어 posts
+        posts_kr = Post_KR.objects.all()
+        serializer_kr = Post_KRSerializer(posts_kr, many=True)
 
-        posts = Post.objects.all()
-        serializer = PostSerializer(posts, many=True)
-        return Response(serializer.data)
+        data = {"post_en": serializer_en.data, "post_kr": serializer_kr.data}
+        return Response(data, status=status.HTTP_200_OK)
 
     def post(self, request):
         serializer = PostSerializer(data=request.data)
@@ -52,14 +41,15 @@ class PostList(APIView):
 # PostDetail(특정 값)
 class PostDetail(APIView):
     def get(self, request, id):
-        # if is_korean(request):
-        #     post = get_object_or_404(Post_KR, post=id)
-        # else:
-        #     post = get_object_or_404(Post, post_id=id)
+        # 영어 post
+        post_en = get_object_or_404(Post, post_id=id)
+        serializer_en = PostSerializer(post_en)
+        # 한국어 post
+        post_kr = get_object_or_404(Post_KR, post_id=id)
+        serializer_kr = Post_KRSerializer(post_kr)
 
-        post = get_object_or_404(Post, post_id=id)
-        serializer = PostSerializer(post)
-        return Response(serializer.data)
+        data = {"posts_en": serializer_en.data, "posts_kr": serializer_kr.data}
+        return Response(data, status=status.HTTP_200_OK)
 
     def put(self, request, id):
         post = get_object_or_404(Post, post_id=id)
