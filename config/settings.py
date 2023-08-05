@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os, json
-import os, json
 from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -50,11 +49,16 @@ DJANGO_APPS = [
 ]
 
 PROJECT_APPS = [
+    'accounts',
     'posts',
+    'places',
+    'profiles',
+    'reviews',
 ]
 
 THIRD_PARTY_APPS = [
     'corsheaders',
+    'rest_framework',
 ]
 
 
@@ -104,12 +108,18 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# Database
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+	'default': {
+		'ENGINE': 'django.db.backends.mysql',
+		'NAME': 'likelion11th',     # RDS DB 이름
+		'USER': get_secret("DB_USER"),
+		'PASSWORD': get_secret("DB_PASSWORD"),
+		'HOST': get_secret("DB_HOST"),
+		'PORT': '3306',     # mysql - 3306 포트
+	}
 }
+
 
 
 # Password validation
@@ -152,3 +162,6 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# User setting
+AUTH_USER_MODEL = 'accounts.User'

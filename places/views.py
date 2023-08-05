@@ -1,12 +1,12 @@
 from django.shortcuts import render
-from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from .models import Post, Post_KR
 
-# Create your views here.
+# models
+from .models import Place
 
 # serializer
-from .serializers import PostSerializer, Post_KRSerializer
+from .serializers import PlaceSerializer
+
 
 # DRF
 from rest_framework.views import APIView
@@ -15,15 +15,15 @@ from rest_framework import status
 from django.http import Http404
 
 
-# PostList(전체)
-class PostList(APIView):
+# PlaceList(전체)
+class PlaceList(APIView):
     def get(self, request):
-        posts = Post.objects.all()
-        serializer = PostSerializer(posts, many=True)
+        places = Place.objects.all()
+        serializer = PlaceSerializer(places, many=True)
         return Response(serializer.data)
 
-    def post(self, request):
-        serializer = PostSerializer(data=request.data)
+    def place(self, request):
+        serializer = PlaceSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -31,16 +31,16 @@ class PostList(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# PostDetail(특정 값)
-class PostDetail(APIView):
+# PlaceDetail(특정 값)
+class PlaceDetail(APIView):
     def get(self, request, id):
-        post = get_object_or_404(Post, post_id=id)
-        serializer = PostSerializer(post)
+        place = get_object_or_404(Place, post_id=id)
+        serializer = PlaceSerializer(place)
         return Response(serializer.data)
 
     def put(self, request, id):
-        post = get_object_or_404(Post, post_id=id)
-        serializer = PostSerializer(post, data=request.data)
+        place = get_object_or_404(Place, post_id=id)
+        serializer = PlaceSerializer(place, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -48,6 +48,6 @@ class PostDetail(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, id):
-        post = get_object_or_404(Post, post_id=id)
-        post.delete()
+        place = get_object_or_404(Place, post_id=id)
+        place.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
