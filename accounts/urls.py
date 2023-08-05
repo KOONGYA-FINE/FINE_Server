@@ -8,7 +8,9 @@ urlpatterns = [
 
     #회원가입/로그인/로그아웃
     path('signup/', RegisterView.as_view()),
-    # path('signin/', AuthView.as_view()),
+    path('signin/', AuthView.as_view()),
+    path('logout/', LogoutView.as_view()),
+
     #토큰
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
