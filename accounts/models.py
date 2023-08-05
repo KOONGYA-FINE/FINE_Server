@@ -30,7 +30,7 @@ class UserManager(BaseUserManager):
         user.is_superuser = True
         user.is_active = True
         user.is_staff = True
-        user.is_admin = True  
+        user.is_admin = True
         user.set_password(password)
         user.save(using=self._db)
         return user
@@ -50,9 +50,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     nation = models.ForeignKey(Nation, on_delete=models.CASCADE, blank=True, null=True)
     birth = models.DateField(verbose_name="생년월일", null=True)
     school = models.CharField(verbose_name="학교", max_length=100)
-    profile_image = models.ImageField(verbose_name="프로필 이미지", null=True, upload_to="")  # S3
+    profile_image = models.ImageField(
+        verbose_name="프로필 이미지", null=True, upload_to=""
+    )  # S3
     sns_link = models.CharField(verbose_name="sns 계정", max_length=100)
-    location = models.CharField(verbose_name="출신지", max_length=100)
     token = models.CharField(max_length=100)
     is_staff = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)

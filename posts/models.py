@@ -25,4 +25,3 @@ class Post_KR(BaseModel):
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
     title = models.CharField(verbose_name="한국어 제목", max_length=50)
     content = models.CharField(verbose_name="한국어 내용", max_length=200)
-    interest = models.CharField(verbose_name="한국어 관심사", max_length=100)

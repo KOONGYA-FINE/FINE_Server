@@ -19,12 +19,24 @@ from django.http import Http404
 # PostList(전체)
 class PostList(APIView):
     def get(self, request):
+        interest = request.query_params.get("interest")
+
         # 영어 posts
         posts_en = Post.objects.all()
         serializer_en = PostSerializer(posts_en, many=True)
+
         # 한국어 posts
         posts_kr = Post_KR.objects.all()
         serializer_kr = Post_KRSerializer(posts_kr, many=True)
+
+        if interest:
+            # 영어 posts 중 파싱된 interest 값을 포함하는 게시물 필터링
+            posts_en = posts_en.filter(interest__icontains=interest)
+            serializer_en = PostSerializer(posts_en, many=True)
+
+            # 한국어 posts 중 파싱된 interest 값을 포함하는 게시물 필터링
+            posts_kr = posts_kr.filter(post__interest__icontains=interest)
+            serializer_kr = Post_KRSerializer(posts_kr, many=True)
 
         data = {"post_en": serializer_en.data, "post_kr": serializer_kr.data}
         return Response(data, status=status.HTTP_200_OK)
