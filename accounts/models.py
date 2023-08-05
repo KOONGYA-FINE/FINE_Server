@@ -28,8 +28,9 @@ class UserManager(BaseUserManager):
 
         user = self.create_user(email=email, username=username, password=password)
         user.is_superuser = True
+        user.is_active = True
         user.is_staff = True
-        user.is_admin = True
+        user.is_admin = True  
         user.set_password(password)
         user.save(using=self._db)
         return user
@@ -38,7 +39,7 @@ class UserManager(BaseUserManager):
 class Nation(models.Model):
     nation_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
-    image = models.CharField(max_length=100)
+    image = models.ImageField(upload_to="")
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -48,13 +49,15 @@ class User(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(verbose_name="이름", max_length=50, unique=True)
     nation = models.ForeignKey(Nation, on_delete=models.CASCADE, blank=True, null=True)
     birth = models.DateField(verbose_name="생년월일", null=True)
-    school = models.CharField(verbose_name="학교", max_length=50)
-    profile_image = models.ImageField(verbose_name="프로필 이미지", null=True)  # S3
+    school = models.CharField(verbose_name="학교", max_length=100)
+    profile_image = models.ImageField(verbose_name="프로필 이미지", null=True, upload_to="")  # S3
     sns_link = models.CharField(verbose_name="sns 계정", max_length=100)
     location = models.CharField(verbose_name="출신지", max_length=100)
     token = models.CharField(max_length=100)
     is_staff = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=False)
+    date_joined = models.DateTimeField(auto_now=True)
 
     # User 커스터마이징할 때 User 식별용
     USERNAME_FIELD = "email"
