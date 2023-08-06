@@ -54,6 +54,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name="프로필 이미지", null=True, upload_to=""
     )  # S3
     sns_link = models.CharField(verbose_name="sns 계정", max_length=100)
+    gender = models.CharField(verbose_name="성별", max_length=1, null=True)
     token = models.CharField(max_length=100)
     is_staff = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)
