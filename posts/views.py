@@ -45,7 +45,6 @@ class PostList(APIView):
             posts_en = posts_en.filter(q)
             serializer_en = PostSerializer(posts_en, many=True)
 
-            print(serializer_en.data)
             # 한국어 posts 중 필터링된 영어 post와 짝꿍 게시물 필터링
             if serializer_en.data != []:
                 post_id_value = serializer_en.data[0]["post_id"]
