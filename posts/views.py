@@ -23,6 +23,8 @@ from django.http import Http404
 class PostList(APIView):
     def get(self, request):
         interest = request.query_params.get("interest")
+        order = request.query_params.get("order")
+        page = request.query_params.get("page")
 
         # 영어 posts
         posts_en = Post.objects.all()
@@ -158,16 +160,16 @@ class PostDetail(APIView):
     def get(self, request, id):
         # 게시물 불러오기
         post_en = get_object_or_404(Post, post_id=id)
-        # post_kr = get_object_or_404(Post_KR, post_id=id)
+        post_kr = get_object_or_404(Post_KR, post_id=id)
 
         # 시리얼라이저 생성
         serializer_en = PostSerializer(post_en)
-        # serializer_kr = Post_KRSerializer(post_kr)
+        serializer_kr = Post_KRSerializer(post_kr)
 
         # 데이터 조합
         data = {
             "post_en": serializer_en.data,
-            # "post_kr": serializer_kr.data,
+            "post_kr": serializer_kr.data,
         }
 
         return Response(data, status=status.HTTP_200_OK)
