@@ -16,6 +16,7 @@ class UserManager(BaseUserManager):
 
         email = self.normalize_email(email)
         user = self.model(email=email, password=password)
+        user.is_active = True
         user.set_password(password)
         user.save(using=self._db)
         return user
@@ -31,6 +32,24 @@ class UserManager(BaseUserManager):
         user.is_admin = True  
         user.set_password(password)
         user.save(using=self._db)
+        return user
+
+    def put_token(self, email, token):
+        user = User.objects.filter(email=email).update(token=token)         # save() 대신 update()
+        return user
+    
+    def activate(self, email):
+        user = User.objects.filter(email=email).update(is_allowed = True)
+        return user
+
+    def put_info(self, email, username, nation, birth, school, gender):
+        user = User.objects.filter(email=email).update(
+            username = username,
+            nation = nation,
+            birth = birth,
+            school = school,
+            gender = gender
+            )
         return user
 
 
@@ -50,12 +69,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     birth = models.DateField(verbose_name="생년월일", null=True)
     school = models.CharField(verbose_name="학교", max_length=100)
     profile_image = models.ImageField(verbose_name="프로필 이미지", null=True, upload_to="")  # S3
-    sns_link = models.CharField(verbose_name="sns 계정", max_length=100)
+    sns_link = models.CharField(verbose_name="sns 계정", max_length=100, null=True)
     gender = models.CharField(verbose_name="성별", max_length=1)
-    token = models.CharField(max_length=100)
+    token = models.CharField(max_length=300)
     is_staff = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)
     is_active = models.BooleanField(default=False)
+    is_allowed = models.BooleanField(default=False)
     date_joined = models.DateTimeField(auto_now=True)
 
     # User 커스터마이징할 때 User 식별용

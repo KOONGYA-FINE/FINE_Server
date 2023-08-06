@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from .serializers import RegisterSerializer, AuthSerializer
+from .serializers import RegisterSerializer, AuthSerializer, UserInfoSerializer
 from .models import User
 
 class EmailVerificationView(APIView):
@@ -34,6 +34,7 @@ class RegisterView(APIView):
             token = RefreshToken.for_user(user)
             refresh_token = str(token)
             access_token = str(token.access_token)
+            serializer.save_token(user, refresh_token)
 
             res = Response(
                 {
@@ -49,6 +50,28 @@ class RegisterView(APIView):
             return res
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+class UserInfoView(APIView):    
+    serializer_class = UserInfoSerializer
+
+    def put(self, request):
+
+        serializer = self.serializer_class(data=request.data)
+        print("activate")
+
+        if serializer.is_valid(raise_exception=False):
+            if User.objects.filter(email=request.user).exists():
+                serializer.set_is_allowed(request.user)
+                serializer.put(request.user, request)
+                res = Response(
+                {
+                    "user": serializer.data,
+                    "message":"Insert user_info success"
+                },
+                status=status.HTTP_200_OK,
+            )
+            return res
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class AuthView(APIView):
     serializer_class = AuthSerializer
@@ -61,6 +84,8 @@ class AuthView(APIView):
             user = serializer.validated_data['user']
             access_token = serializer.validated_data['access_token']
             refresh_token = serializer.validated_data['refresh_token']
+            serializer.save_token(user, refresh_token)
+
             res = Response(
                 {
                     "user": {
@@ -80,9 +105,7 @@ class AuthView(APIView):
             return res
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class LogoutView(APIView):
+        
     def delete(self, request):
         res = Response({
 			"message":"logout success"
