@@ -45,10 +45,11 @@ class PostList(APIView):
             posts_en = posts_en.filter(q)
             serializer_en = PostSerializer(posts_en, many=True)
 
+            print(serializer_en.data)
             # 한국어 posts 중 필터링된 영어 post와 짝꿍 게시물 필터링
             if serializer_en.data != []:
-                post_id_value = serializer_en.data[0]["post_id"]
-                posts_kr = posts_kr.filter(post__post_id=post_id_value)
+                post_id_list = [item["post_id"] for item in serializer_en.data]
+                posts_kr = posts_kr.filter(post__post_id__in=post_id_list)
                 serializer_kr = Post_KRSerializer(posts_kr, many=True)
 
         data = {"post_en": serializer_en.data, "post_kr": serializer_kr.data}
@@ -60,6 +61,7 @@ class PostList(APIView):
         title = request.data.get("title")
         content = request.data.get("content")
         interest = request.data.get("interest")
+        image = request.data.get("image")
         translation = request.data.get("translate")
 
         # 가져온 데이터의 language가 영어일 경우
@@ -71,6 +73,7 @@ class PostList(APIView):
                     "title": title,
                     "content": content,
                     "interest": interest,
+                    "image": image,
                 }
             )
             if serializer_en.is_valid():
@@ -100,10 +103,13 @@ class PostList(APIView):
                     serializer_kr.errors, status=status.HTTP_400_BAD_REQUEST
                 )
 
-            data = {"serializer_en": serializer_en, "serializer_kr": serializer_kr}
+            data = {
+                "serializer_en": serializer_en.data,
+                "serializer_kr": serializer_kr.data,
+            }
             return Response(data, status.HTTP_201_CREATED)
 
-        # 가져온 데이터의 language가 한국어일 경우
+        # 가져온 데이터의 language가 한국어일 경우 (translation == english)
         else:
             if "\n" in translation:
                 translation_list = translation.split("\n", 1)
@@ -116,6 +122,7 @@ class PostList(APIView):
                     "title": en_title,
                     "content": en_content,
                     "interest": interest,
+                    "image": image,
                 }
             )
             if serializer_en.is_valid():
@@ -139,7 +146,10 @@ class PostList(APIView):
                     serializer_kr.errors, status=status.HTTP_400_BAD_REQUEST
                 )
 
-            data = {"serializer_en": serializer_en, "serializer_kr": serializer_kr}
+            data = {
+                "serializer_en": serializer_en.data,
+                "serializer_kr": serializer_kr.data,
+            }
             return Response(data, status=status.HTTP_201_CREATED)
 
 

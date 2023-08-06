@@ -19,7 +19,7 @@ class Post(BaseModel):
     content = models.CharField(verbose_name="내용", max_length=200)
     image = models.ImageField(verbose_name="이미지", null=True)  # S3
     interest = models.CharField(
-        verbose_name="관심사", max_length=100, default=None
+        verbose_name="관심사", max_length=100, default=None, null=True
     )  # 디폴트 값 추가
 
 

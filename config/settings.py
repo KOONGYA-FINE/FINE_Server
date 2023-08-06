@@ -119,9 +119,6 @@ DATABASES = {
         "PASSWORD": get_secret("DB_PASSWORD"),
         "HOST": get_secret("DB_HOST"),
         "PORT": "3306",  # mysql - 3306 포트
-        "OPTIONS": {  # strict 모드 설정으로 warnings 해결
-            "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
-        },
     }
 }
 
