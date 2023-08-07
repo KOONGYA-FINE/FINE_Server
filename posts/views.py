@@ -24,6 +24,7 @@ from rest_framework.pagination import PageNumberPagination
 
 # 인가
 from config.permissions import IsWriterOrReadOnly
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 
 class CustomPageNumberPagination(PageNumberPagination):
@@ -34,6 +35,8 @@ class CustomPageNumberPagination(PageNumberPagination):
 
 # PostList(전체)
 class PostList(APIView):
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    
     # Tag로 필터링 + 페이지네이션 + 정렬 -> 영어 한국어 게시물 모두 response
     def get(self, request):
         interest = request.query_params.get("interest")
@@ -87,6 +90,7 @@ class PostList(APIView):
 
 
     def post(self, request):
+        
         language = request.data.get("language")  # 작성한 언어 판단
         user_id = request.data.get("user_id")
         title = request.data.get("title")
