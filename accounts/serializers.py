@@ -104,7 +104,7 @@ class AuthSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = "__all__"
+        exclude = ["token", "is_staff", "is_admin", "is_superuser", "is_active", "is_allowed", "date_joined", "password", "last_login", "birth"]
 
 class NationSerializer(serializers.ModelSerializer):
     class Meta:
