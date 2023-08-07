@@ -37,53 +37,54 @@ class PostList(APIView):
     # Tag로 필터링 + 페이지네이션 + 정렬 -> 영어 한국어 게시물 모두 response
     def get(self, request):
         interest = request.query_params.get("interest")
+        gender = request.query_params.get("gender")
+        nation = request.query_params.get("nation")
         order = request.query_params.get("order")
-        page = request.query_params.get("page")
 
         # 영어 posts
         posts_en = Post.objects.all()
         # 영어 정렬
         if order:
             posts_en = posts_en.order_by(order)
-        serializer_en = PostSerializer(posts_en, many=True)
 
         # 한국어 posts
         posts_kr = Post_KR.objects.all()
         # 한국어 정렬
         if order:
             posts_kr = posts_kr.order_by(order)
-        serializer_kr = Post_KRSerializer(posts_kr, many=True)
 
+        # interest Tag 검색
         if interest:
-            # 입력받은 query 파싱
             interest_list = interest.split()
-
-            # Q 객체를 통해 파싱된 interest를 포함하는 post만 필터링
             q = Q()
             for inter in interest_list:
                 q |= Q(interest__icontains=inter)
-
-            # 영어 posts 중 파싱된 interest 값을 포함하는 게시물 필터링
             posts_en = posts_en.filter(q)
+        
+        # gender Tag 검색
+        if gender:
+            posts_en = posts_en.filter(user_id__gender=gender)
+        
+        # nation Tag 검색
+        if nation:
+            posts_en = posts_en.filter(user_id__nation=nation)
 
-            # 정렬
-            if order:
-                posts_en = posts_en.order_by(order)
-
-            # 페이지네이션
-            paginator = CustomPageNumberPagination()
-            paginated_posts_en = paginator.paginate_queryset(posts_en, request)
-            serializer_en = PostSerializer(paginated_posts_en, many=True)
-
+        # 페이지네이션
+        paginator = CustomPageNumberPagination()
+        paginated_posts_en = paginator.paginate_queryset(posts_en, request)
+        serializer_en = PostSerializer(paginated_posts_en, many=True)
+        
+        # 한국어 게시물 데이터 처리
+        serializer_kr = None
+        if serializer_en.data:
             # 한국어 posts 중 필터링된 영어 post와 짝꿍 게시물 필터링
-            if serializer_en.data != []:
-                post_id_list = [item["post_id"] for item in serializer_en.data]
-                posts_kr = posts_kr.filter(post__post_id__in=post_id_list)
-                serializer_kr = Post_KRSerializer(posts_kr, many=True)
+            post_id_list = [item["post_id"] for item in serializer_en.data]
+            posts_kr = posts_kr.filter(post__post_id__in=post_id_list)
+            serializer_kr = Post_KRSerializer(posts_kr, many=True)
 
-        print(serializer_en.data)
-        data = {"post_en": serializer_en.data, "post_kr": serializer_kr.data}
+        data = {"post_en": serializer_en.data, "post_kr": serializer_kr.data if serializer_kr else []}
         return Response(data, status=status.HTTP_200_OK)
+
 
     def post(self, request):
         language = request.data.get("language")  # 작성한 언어 판단
@@ -208,13 +209,104 @@ class PostDetail(APIView):
     def put(self, request, id):
         post = get_object_or_404(Post, post_id=id)
         request.data["user_id"] = request.user.id
-        self.check_object_permissions(request, post)  # 작성자가 같은지 체크
-        serializer = PostSerializer(post, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+        self.check_object_permissions(request, post)   # 작성자가 같은지 체크
+        
+        language = request.data.get("language")  # 작성한 언어 판단
+        user_id = request.data.get("user_id")
+        title = request.data.get("title")
+        content = request.data.get("content")
+        interest = request.data.get("interest")
+        image = request.data.get("image")
+        translation = request.data.get("translate")
+        
+        # 가져온 데이터의 language가 영어일 경우
+        if language == "en":
+            # 영어 post에 값 저장
+            serializer_en = PostSerializer(
+                data={
+                    "user_id": user_id,
+                    "title": title,
+                    "content": content,
+                    "interest": interest,
+                    "image": image,
+                }
+            )
+            if serializer_en.is_valid():
+                serializer_en.save()
+            else:
+                return Response(
+                    serializer_en.errors, status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # translation을 파싱하여(\n을 기준으로) 한국어 post에 값 저장
+            if "\n" in translation:
+                translation_list = translation.split("\n", 1)
+                kr_title = translation_list[0].strip()
+                kr_content = translation_list[1].strip()
+
+            serializer_kr = Post_KRSerializer(
+                data={
+                    "post": serializer_en.data["post_id"],
+                    "title": kr_title,
+                    "content": kr_content,
+                }
+            )
+            if serializer_kr.is_valid():
+                serializer_kr.save()
+            else:
+                return Response(
+                    serializer_kr.errors, status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # en, kr 한 번에 담아서 response
+            data = {
+                "serializer_en": serializer_en.data,
+                "serializer_kr": serializer_kr.data,
+            }
+            return Response(data, status.HTTP_201_CREATED)
+
+        # 가져온 데이터의 language가 한국어일 경우 (translation == english) language가 영어일 경우와 반대
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            if "\n" in translation:
+                translation_list = translation.split("\n", 1)
+                en_title = translation_list[0].strip()
+                en_content = translation_list[1].strip()
+
+            serializer_en = PostSerializer(
+                data={
+                    "user_id": user_id,
+                    "title": en_title,
+                    "content": en_content,
+                    "interest": interest,
+                    "image": image,
+                }
+            )
+            if serializer_en.is_valid():
+                serializer_en.save()
+            else:
+                return Response(
+                    serializer_en.errors, status=status.HTTP_400_BAD_REQUEST
+                )
+
+            serializer_kr = Post_KRSerializer(
+                data={
+                    "post": serializer_en.data["post_id"],
+                    "title": title,
+                    "content": content,
+                }
+            )
+            if serializer_kr.is_valid():
+                serializer_kr.save()
+            else:
+                return Response(
+                    serializer_kr.errors, status=status.HTTP_400_BAD_REQUEST
+                )
+
+            data = {
+                "serializer_en": serializer_en.data,
+                "serializer_kr": serializer_kr.data,
+            }
+            return Response(data, status=status.HTTP_201_CREATED)
 
     def delete(self, request, id):
         post = get_object_or_404(Post, post_id=id)
