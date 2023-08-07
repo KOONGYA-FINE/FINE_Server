@@ -55,7 +55,7 @@ jobs:
           sudo apt-get -y upgrade
           cd /home/ubuntu/FINE_Server
           source venv/bin/activate
-          git pull
+          git pull origin dev
           sudo lsof -t -i tcp:8000 | xargs kill -9
           pip install -r requirements.txt
           python manage.py makemigrations	
