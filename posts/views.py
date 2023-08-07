@@ -140,8 +140,8 @@ class PostList(APIView):
 
             # en, kr 한 번에 담아서 response
             data = {
-                "serializer_en": serializer_en.data,
-                "serializer_kr": serializer_kr.data,
+                "post_en": serializer_en.data,
+                "post_kr": serializer_kr.data,
             }
             return Response(data, status.HTTP_201_CREATED)
 
@@ -183,8 +183,8 @@ class PostList(APIView):
                 )
 
             data = {
-                "serializer_en": serializer_en.data,
-                "serializer_kr": serializer_kr.data,
+                "post_en": serializer_en.data,
+                "post_kr": serializer_kr.data,
             }
             return Response(data, status=status.HTTP_201_CREATED)
 
@@ -264,8 +264,8 @@ class PostDetail(APIView):
 
             # en, kr 한 번에 담아서 response
             data = {
-                "serializer_en": serializer_en.data,
-                "serializer_kr": serializer_kr.data,
+                "post_en": serializer_en.data,
+                "post_kr": serializer_kr.data,
             }
             return Response(data, status.HTTP_201_CREATED)
 
@@ -307,8 +307,8 @@ class PostDetail(APIView):
                 )
 
             data = {
-                "serializer_en": serializer_en.data,
-                "serializer_kr": serializer_kr.data,
+                "post_en": serializer_en.data,
+                "post_kr": serializer_kr.data,
             }
             return Response(data, status=status.HTTP_201_CREATED)
 
@@ -317,4 +317,4 @@ class PostDetail(APIView):
         request.data["user_id"] = request.user.id
         self.check_object_permissions(request, post)  # 작성자가 같은지 체크
         post.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response("DELETE complete", status=status.HTTP_204_NO_CONTENT)
