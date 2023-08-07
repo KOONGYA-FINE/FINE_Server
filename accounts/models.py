@@ -35,21 +35,32 @@ class UserManager(BaseUserManager):
         return user
 
     def put_token(self, email, token):
-        user = User.objects.filter(email=email).update(token=token)         # save() 대신 update()
+        user = User.objects.get(email=email)
+        user.token = token
+        user.save(using=self._db)
+        permission = user.is_allowed
+        return permission
+    
+    def delete_token(self, email):
+        user = User.objects.get(email=email)
+        user.token = ''
+        user.save(using=self._db) 
         return user
     
     def activate(self, email):
-        user = User.objects.filter(email=email).update(is_allowed = True)
+        user = User.objects.get(email=email)
+        user.is_allowed = True
+        user.save(using=self._db) 
         return user
 
     def put_info(self, email, username, nation, birth, school, gender):
-        user = User.objects.filter(email=email).update(
-            username = username,
-            nation = nation,
-            birth = birth,
-            school = school,
-            gender = gender
-            )
+        user = User.objects.get(email=email)
+        user.username = username
+        user.nation = nation
+        user.birth = birth
+        user.school = school
+        user.gender = gender
+        user.save(using=self._db) 
         return user
 
 
