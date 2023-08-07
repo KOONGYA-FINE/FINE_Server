@@ -55,9 +55,7 @@ class UserInfoView(APIView):
     serializer_class = UserInfoSerializer
 
     def put(self, request):
-
         serializer = self.serializer_class(data=request.data)
-        print("activate")
 
         if serializer.is_valid(raise_exception=False):
             if User.objects.filter(email=request.user).exists():
@@ -84,9 +82,10 @@ class AuthView(APIView):
             user = serializer.validated_data['user']
             access_token = serializer.validated_data['access_token']
             refresh_token = serializer.validated_data['refresh_token']
-            serializer.save_token(user, refresh_token)
+            data = serializer.save_token(user, refresh_token)
 
-            res = Response(
+            if data:
+                res = Response(
                 {
                     "user": {
                             "id":user.id,
@@ -98,15 +97,36 @@ class AuthView(APIView):
                         "refresh_token":refresh_token,
                     },
                 },
-                status=status.HTTP_200_OK,
-            )
-            res.set_cookie("access-token", access_token, httponly=True)
-            res.set_cookie("refresh-token", refresh_token, httponly=True)
+                    status=status.HTTP_200_OK,
+                )
+                res.set_cookie("access-token", access_token, httponly=True)
+                res.set_cookie("refresh-token", refresh_token, httponly=True)
+            else:
+               res = Response(
+                {
+                    "user": {
+                            "id":user.id,
+                            "email":user.email,
+                    },
+                    "message":"need to insert user_info",
+                    "token":{
+                        "access_token":access_token,
+                        "refresh_token":refresh_token,
+                    },
+                },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+               res.set_cookie("access-token", access_token, httponly=True)
+               res.set_cookie("refresh-token", refresh_token, httponly=True)
+
             return res
+            
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
     def delete(self, request):
+        user = User.objects.delete_token(request.user)
+
         res = Response({
 			"message":"logout success"
 		}, status=status.HTTP_202_ACCEPTED)

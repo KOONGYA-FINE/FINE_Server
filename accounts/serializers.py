@@ -9,7 +9,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        exclude = ['password']
+        fields = ['email', 'password']
 
     def create(self, validated_data):
         user = User.objects.create_user(
@@ -19,8 +19,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
     
     def save_token(self, user, token):
-        user = User.objects.put_token(user, token)
-        return user
+        user_permission = User.objects.put_token(user, token)
+        return user_permission
 
     def validate(self, data):
         email = data.get('email', None)
@@ -98,8 +98,6 @@ class AuthSerializer(serializers.ModelSerializer):
         }
 
         return data
-
-
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
