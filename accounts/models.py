@@ -56,7 +56,7 @@ class UserManager(BaseUserManager):
     def put_info(self, email, username, nation, birth, school, gender):
         user = User.objects.get(email=email)
         user.username = username
-        user.nation = nation
+        user.nation = Nation.objects.get(nation_id=nation)
         user.birth = birth
         user.school = school
         user.gender = gender
