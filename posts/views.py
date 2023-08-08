@@ -265,9 +265,8 @@ class SavePost(APIView):
         try:
             user = User.objects.get(pk=userid)
             post_en = Post.objects.get(pk=postid)
-            post_kr = Post_KR.objects.get(post=post_en)
 
-            data = {"user": user.pk, "post_en": post_en.pk, "post_kr": post_kr.pk}
+            data = {"user": user.pk, "post_en": post_en.pk}
 
             serializer_saved = SavedPostsSerializer(data=data)
             if serializer_saved.is_valid():
