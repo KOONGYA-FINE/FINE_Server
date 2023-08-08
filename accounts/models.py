@@ -5,7 +5,14 @@ from django.contrib.auth.models import (
     BaseUserManager,
 )
 from django.utils import timezone
+from datetime import timedelta
+from random import randint
 
+def expire_dt():
+        return timezone.now() + timedelta(minutes=10)    # 만료 시간 5분
+    
+def generate_code():
+    return randint(100000, 999999)
 
 class UserManager(BaseUserManager):
     use_in_migrations = True
@@ -62,6 +69,12 @@ class UserManager(BaseUserManager):
         user.gender = gender
         user.save(using=self._db) 
         return user
+
+class EmailCode(models.Model):
+    email = models.EmailField(verbose_name="이메일", primary_key=True)
+    code = models.IntegerField(default=generate_code)
+    is_verified = models.BooleanField(default=False)
+    expired_dt = models.DateTimeField(default=expire_dt)
 
 
 class Nation(models.Model):

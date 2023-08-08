@@ -1,6 +1,82 @@
 from rest_framework_simplejwt.serializers import RefreshToken
 from rest_framework import serializers
-from .models import User, Nation
+from .models import User, Nation, EmailCode, generate_code, expire_dt
+from config.settings import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, SES_SENDER
+from django.utils import timezone
+
+
+import boto3
+import botocore
+
+def send_email(to_email, code):
+    client = boto3.client('ses',
+                aws_access_key_id = AWS_ACCESS_KEY_ID,
+                aws_secret_access_key = AWS_SECRET_ACCESS_KEY,
+                region_name = AWS_REGION)
+    sender = SES_SENDER
+
+    try:
+        response = client.send_email(
+            Source = sender,
+            Destination={
+                "ToAddresses": [
+                    to_email,
+                ],
+            },
+            Message={
+                "Body": {
+                    "Html": {
+                        "Charset": "UTF-8",
+                        "Data": f"인증번호를 입력해주세요.\n인증번호: {code}",
+                    },
+                    "Text": {
+                        "Charset": "UTF-8",
+                        "Data": f"인증번호를 입력해주세요.\n인증번호: {code}",
+                    },
+                },
+                "Subject": {
+                    "Charset": "UTF-8",
+                    "Data": "[FINE] 이메일 인증 코드",
+                },
+            },
+            
+        )
+        print("success")
+    except botocore.exceptions.ClientError as e:
+        print(e.response["Error"]["Message"])
+    else:
+        print("Email sent! Message ID:"),
+        print(response["MessageId"])
+
+
+class EmailVerifySerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(required=False)
+
+    class Meta: 
+        model = EmailCode
+        exclude = ['code']
+
+    def send_code(self, email):
+        if EmailCode.objects.filter(email=email).exists():      # 재전송
+            new_code = generate_code()
+            EmailCode.objects.filter(email=email).update(code=new_code, expired_dt=expire_dt())
+            send_email(to_email=email, code=new_code)
+            
+        else:   # 신규 전송
+            email_code = EmailCode.objects.create(email=email)
+            send_email(to_email=email, code=email_code.code)
+    
+    def verify_code(self, code):
+        if EmailCode.objects.filter(code=code).exists():
+            verify = EmailCode.objects.get(code=code)
+            if verify.expired_dt > timezone.now():
+                verify.is_verified = True
+                verify.save()
+            return verify.is_verified
+        else:
+            return False
+    
+    
 
 class RegisterSerializer(serializers.ModelSerializer):
 

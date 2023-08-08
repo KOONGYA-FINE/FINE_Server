@@ -4,10 +4,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from .serializers import RegisterSerializer, AuthSerializer, UserInfoSerializer
+from .serializers import RegisterSerializer, AuthSerializer, UserInfoSerializer, EmailVerifySerializer
 from .models import User
 
-class EmailVerificationView(APIView):
+class EmailCheckView(APIView):
 
     def get(self, request, email):
         if User.objects.filter(email=email).exists():
@@ -22,7 +22,52 @@ class EmailVerificationView(APIView):
             }, status=status.HTTP_200_OK)
             
         return res
-        
+
+
+
+class EmailVerifyView(APIView):
+    serializer_class = EmailVerifySerializer
+
+    def post(self, request):     # 인증 코드 생성 및 메일 발송s
+        serializer = self.serializer_class(data=request.data)
+        email = request.data['email']
+        if serializer.is_valid(raise_exception=False):
+            serializer.send_code(email)
+            
+            res = Response(
+                {
+                    "user":serializer.data,
+                    "message":"email sending success",
+                },
+                status=status.HTTP_201_CREATED,
+            )
+            return res
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request):       # DB에 인증 코드 존재 확인
+        serializer = self.serializer_class(data=request.data)
+        code = request.data['code']
+        if serializer.is_valid(raise_exception=False):
+            is_valid_code = serializer.verify_code(code)
+            if is_valid_code:
+                res = Response(
+                    {
+                        "message":"code verification success",
+                    },
+                    status=status.HTTP_202_ACCEPTED,
+                )
+            else:
+                res = Response(
+                    {
+                        "message":"code verification failed",
+                    },
+                    status=status.HTTP_406_NOT_ACCEPTABLE,
+                )
+            return res
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 class RegisterView(APIView):
     serializer_class = RegisterSerializer
 
