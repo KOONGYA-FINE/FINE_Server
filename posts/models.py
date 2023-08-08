@@ -26,4 +26,14 @@ class Post(BaseModel):
 class Post_KR(BaseModel):
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
     title = models.CharField(verbose_name="한국어 제목", max_length=50)
-    content = models.CharField(verbose_name="한국어 내용", max_length=200)
+    content = models.CharField(verbose_name="한국어 내용", max_length=200, default="")
+
+
+class SavedPosts(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    post_en = models.ForeignKey(Post, on_delete=models.CASCADE)
+    post_kr = models.ForeignKey(Post_KR, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ["user", "post_en", "post_kr"]  # 중복 스크랩 방지
