@@ -47,7 +47,7 @@ class EmailVerifyView(APIView):
 
     def get(self, request):       # DB에 인증 코드 존재 확인
         serializer = self.serializer_class(data=request.data)
-        code = request.data['code']
+        code = request.query_params.get('code')
         if serializer.is_valid(raise_exception=False):
             is_valid_code = serializer.verify_code(code)
             if is_valid_code:
