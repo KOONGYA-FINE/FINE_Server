@@ -5,7 +5,14 @@ from django.contrib.auth.models import (
     BaseUserManager,
 )
 from django.utils import timezone
+from datetime import timedelta
+from random import randint
 
+def expire_dt():
+        return timezone.now() + timedelta(minutes=10)    # 만료 시간 5분
+    
+def generate_code():
+    return randint(100000, 999999)
 
 class UserManager(BaseUserManager):
     use_in_migrations = True
@@ -35,22 +42,39 @@ class UserManager(BaseUserManager):
         return user
 
     def put_token(self, email, token):
-        user = User.objects.filter(email=email).update(token=token)         # save() 대신 update()
+        user = User.objects.get(email=email)
+        user.token = token
+        user.save(using=self._db)
+        permission = user.is_allowed
+        return permission
+    
+    def delete_token(self, email):
+        user = User.objects.get(email=email)
+        user.token = ''
+        user.save(using=self._db) 
         return user
     
     def activate(self, email):
-        user = User.objects.filter(email=email).update(is_allowed = True)
+        user = User.objects.get(email=email)
+        user.is_allowed = True
+        user.save(using=self._db) 
         return user
 
     def put_info(self, email, username, nation, birth, school, gender):
-        user = User.objects.filter(email=email).update(
-            username = username,
-            nation = nation,
-            birth = birth,
-            school = school,
-            gender = gender
-            )
+        user = User.objects.get(email=email)
+        user.username = username
+        user.nation = Nation.objects.get(nation_id=nation)
+        user.birth = birth
+        user.school = school
+        user.gender = gender
+        user.save(using=self._db) 
         return user
+
+class EmailCode(models.Model):
+    email = models.EmailField(verbose_name="이메일", primary_key=True)
+    code = models.IntegerField(default=generate_code)
+    is_verified = models.BooleanField(default=False)
+    expired_dt = models.DateTimeField(default=expire_dt)
 
 
 class Nation(models.Model):
