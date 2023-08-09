@@ -1,9 +1,9 @@
+from django.shortcuts import render
 from rest_framework_simplejwt.serializers import RefreshToken
 from rest_framework import serializers
 from .models import User, Nation, EmailCode, generate_code, expire_dt
 from config.settings import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, SES_SENDER
 from django.utils import timezone
-
 
 import boto3
 import botocore
@@ -14,6 +14,8 @@ def send_email(to_email, code):
                 aws_secret_access_key = AWS_SECRET_ACCESS_KEY,
                 region_name = AWS_REGION)
     sender = SES_SENDER
+
+    content = render(None, "email.html", {"code": code}).content.decode("utf-8") 
 
     try:
         response = client.send_email(
@@ -27,7 +29,7 @@ def send_email(to_email, code):
                 "Body": {
                     "Html": {
                         "Charset": "UTF-8",
-                        "Data": f"인증번호를 입력해주세요.\n인증번호: {code}",
+                        "Data": content,
                     },
                     "Text": {
                         "Charset": "UTF-8",
@@ -36,7 +38,7 @@ def send_email(to_email, code):
                 },
                 "Subject": {
                     "Charset": "UTF-8",
-                    "Data": "[FINE] 이메일 인증 코드",
+                    "Data": "[FINE] Email Address Verification Code",
                 },
             },
             
