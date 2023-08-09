@@ -17,7 +17,6 @@ class Post(BaseModel):
     title = models.CharField(verbose_name="제목", max_length=50)
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
     content = models.CharField(verbose_name="내용", max_length=300)
-    image = models.ImageField(verbose_name="이미지", null=True)  # S3
     interest = models.CharField(
         verbose_name="관심사", max_length=100, default=None, null=True
     )  # 디폴트 값 추가
