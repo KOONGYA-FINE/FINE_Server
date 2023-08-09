@@ -139,7 +139,6 @@ class PostList(APIView):
             title = request.data.get("title")
             content = request.data.get("content")
             interest = request.data.get("interest")
-            image = request.data.get("image")
             translation = request.data.get("translate")
 
             # 가져온 데이터의 language가 영어일 경우
@@ -151,7 +150,7 @@ class PostList(APIView):
                     kr_content = translation_list[1].strip()
 
                 # post에 값 저장
-                serializer_en = create_en_post(user_id, title, content, interest, image)
+                serializer_en = create_en_post(user_id, title, content, interest)
                 serializer_kr = create_kr_post(serializer_en, kr_title, kr_content)
 
                 # en, kr 한 번에 담아서 response
@@ -170,9 +169,7 @@ class PostList(APIView):
                     en_content = translation_list[1].strip()
 
                 # post에 값 저장
-                serializer_en = create_en_post(
-                    user_id, en_title, en_content, interest, image
-                )
+                serializer_en = create_en_post(user_id, en_title, en_content, interest)
                 serializer_kr = create_kr_post(serializer_en, title, content)
 
                 data = {
@@ -189,12 +186,13 @@ class PostList(APIView):
 
 # PostDetail(특정 값)
 class PostDetail(APIView):
-    permission_classes = [IsWriterOrReadOnly]  # 작성자만 put, delete 가능
+    permission_classes = [IsWriterOrReadOnly]  # 로그인 하면 get 가능, 작성자만 put, delete 가능
 
     def get(self, request, id):
         # 게시물 불러오기
         post_en = get_object_or_404(Post, post_id=id)
         post_kr = get_object_or_404(Post_KR, post_id=id)
+        self.check_object_permissions(self.request, post_en)
 
         # 시리얼라이저 생성
         serializer_en = PostSerializer(post_en)
@@ -205,7 +203,6 @@ class PostDetail(APIView):
             "post_en": serializer_en.data,
             "post_kr": serializer_kr.data,
         }
-
         return Response(data, status=status.HTTP_200_OK)
 
     def put(self, request, id):
@@ -218,7 +215,6 @@ class PostDetail(APIView):
         title = request.data.get("title")
         content = request.data.get("content")
         interest = request.data.get("interest")
-        image = request.data.get("image")
         translation = request.data.get("translate")
 
         # 가져온 데이터의 language가 영어일 경우
@@ -230,7 +226,7 @@ class PostDetail(APIView):
                 kr_content = translation_list[1].strip()
 
             # post에 값 저장
-            serializer_en = create_en_post(user_id, title, content, interest, image)
+            serializer_en = create_en_post(user_id, title, content, interest)
             serializer_kr = create_kr_post(serializer_en, kr_title, kr_content)
 
             # en, kr 한 번에 담아서 response
@@ -248,9 +244,7 @@ class PostDetail(APIView):
                 en_content = translation_list[1].strip()
 
             # post에 값 저장
-            serializer_en = create_en_post(
-                user_id, en_title, en_content, interest, image
-            )
+            serializer_en = create_en_post(user_id, en_title, en_content, interest)
             serializer_kr = create_kr_post(serializer_en, title, content)
 
             data = {
