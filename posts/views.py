@@ -193,6 +193,12 @@ class PostDetail(APIView):
         post_kr = get_object_or_404(Post_KR, post_id=id)
         self.check_object_permissions(self.request, post_en)
 
+        # 삭제된 posts인지 확인
+        if post_en.is_deleted == True:
+            return Response(
+                {"detail": "This post is deleted"}, status=status.HTTP_404_NOT_FOUND
+            )
+
         # 시리얼라이저 생성
         serializer_en = PostSerializer(post_en)
         serializer_kr = Post_KRSerializer(post_kr)
@@ -208,6 +214,12 @@ class PostDetail(APIView):
         post = get_object_or_404(Post, post_id=id)
         request.data["user_id"] = request.user.id
         self.check_object_permissions(request, post)  # 작성자가 같은지 체크
+
+        # 삭제된 posts인지 확인
+        if post.is_deleted == True:
+            return Response(
+                {"detail": "This post is deleted"}, status=status.HTTP_404_NOT_FOUND
+            )
 
         language = request.data.get("language")  # 작성한 언어 판단
         user_id = request.data.get("user_id")
@@ -253,11 +265,32 @@ class PostDetail(APIView):
             return Response(data, status=status.HTTP_201_CREATED)
 
     def delete(self, request, id):
-        post = get_object_or_404(Post, post_id=id)
-        request.data["user_id"] = request.user.id
-        self.check_object_permissions(request, post)  # 작성자가 같은지 체크
-        post.delete()
-        return Response("DELETE complete", status=status.HTTP_204_NO_CONTENT)
+        try:
+            post_en = get_object_or_404(Post, post_id=id)
+            post_kr = get_object_or_404(Post_KR, post=post_en)
+
+            # 삭제된 posts인지 확인
+            if post_en.is_deleted == True:
+                return Response(
+                    {"detail": "This post is already deleted"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            request.data["user_id"] = request.user.id
+            self.check_object_permissions(request, post_en)  # 작성자가 같은지 체크
+
+            post_en.is_deleted = True
+            post_kr.is_deleted = True
+
+            post_en.save()
+            post_kr.save()
+
+            return Response("DELETE complete", status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            return Response(
+                {"detail": f"An error occurred: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 
 class SavePost(APIView):
@@ -291,7 +324,8 @@ class SavePost(APIView):
             saved_post = SavedPosts.objects.filter(user=user, post_en=post_en).first()
 
             if saved_post:
-                saved_post.delete()
+                saved_post.is_deleted = True
+                saved_post.save()
                 return Response("DELETE complete", status=status.HTTP_204_NO_CONTENT)
             else:
                 return Response(
