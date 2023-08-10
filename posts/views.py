@@ -47,13 +47,12 @@ def apply_filters(queryset, filters):
 
 
 # 영어 post 저장
-def create_en_post(user_id, title, content, interest, image):
+def create_en_post(user_id, title, content, interest):
     data = {
         "user_id": user_id,
         "title": title,
         "content": content,
         "interest": interest,
-        "image": image,
     }
     serializer_en = PostSerializer(data=data)
     if serializer_en.is_valid():
@@ -177,10 +176,10 @@ class PostList(APIView):
                     "post_kr": serializer_kr.data,
                 }
                 return Response(data, status=status.HTTP_201_CREATED)
-        except:
+        except Exception as e:
             return Response(
-                "Need to check : user_id, language, title, content, translate",
-                status=status.HTTP_400_BAD_REQUEST,
+                {"detail": f"An error occurred: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
 
@@ -269,7 +268,7 @@ class SavePost(APIView):
             user = User.objects.get(pk=userid)
             post_en = Post.objects.get(pk=postid)
 
-            data = {"user": user.pk, "post_en": post_en.pk}
+            data = {"user": user.pk, "post_en": post_en.pk, "post_kr": post_en.pk}
 
             serializer_saved = SavedPostsSerializer(data=data)
             if serializer_saved.is_valid():
@@ -281,7 +280,7 @@ class SavePost(APIView):
                 )
         except:
             return Response(
-                {"message": "Post is not exist"}, status=status.HTTP_404_NOT_FOUND
+                {"detail": "Post is not exist"}, status=status.HTTP_404_NOT_FOUND
             )
 
     def delete(self, request, postid, userid):
@@ -296,7 +295,8 @@ class SavePost(APIView):
                 return Response("DELETE complete", status=status.HTTP_204_NO_CONTENT)
             else:
                 return Response(
-                    "Saved post is not exist", status=status.HTTP_404_NOT_FOUND
+                    {"detail": "Saved post is not exist"},
+                    status=status.HTTP_404_NOT_FOUND,
                 )
         except:
-            return Response("Saved post is not exist")
+            return Response({"detail": "Saved post is not exist"})
