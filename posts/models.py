@@ -20,12 +20,14 @@ class Post(BaseModel):
     interest = models.CharField(
         verbose_name="관심사", max_length=100, default=None, null=True
     )  # 디폴트 값 추가
+    is_deleted = models.BooleanField(default=False)  # 삭제 여부 확인
 
 
 class Post_KR(BaseModel):
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
     title = models.CharField(verbose_name="한국어 제목", max_length=50)
     content = models.CharField(verbose_name="한국어 내용", max_length=200, default="")
+    is_deleted = models.BooleanField(default=False)
 
 
 class SavedPosts(models.Model):
@@ -33,6 +35,7 @@ class SavedPosts(models.Model):
     post_en = models.ForeignKey(Post, on_delete=models.CASCADE)
     post_kr = models.ForeignKey(Post_KR, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
+    is_deleted = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ["user", "post_en", "post_kr"]  # 중복 스크랩 방지
