@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from rest_framework_simplejwt.serializers import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework import serializers
 from .models import User, Nation, EmailCode, generate_code, expire_dt
 from config.settings import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, SES_SENDER
@@ -7,6 +8,20 @@ from django.utils import timezone
 
 import boto3
 import botocore
+
+class CustomTokenRefreshSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+    access = serializers.CharField(read_only=True)
+    token_class = RefreshToken
+
+    def validate(self, attrs):
+        try:
+            refresh = self.token_class(attrs["refresh"])
+            data = {"access": str(refresh.access_token)}
+        except TokenError:
+            raise serializers.ValidationError('invalid or expired token')
+            
+        return data
 
 def send_email(to_email, code):
     client = boto3.client('ses',
@@ -77,8 +92,6 @@ class EmailVerifySerializer(serializers.ModelSerializer):
             return verify.is_verified
         else:
             return False
-    
-    
 
 class RegisterSerializer(serializers.ModelSerializer):
 

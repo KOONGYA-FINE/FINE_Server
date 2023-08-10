@@ -4,8 +4,30 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from .serializers import RegisterSerializer, AuthSerializer, UserInfoSerializer, EmailVerifySerializer
+from .serializers import RegisterSerializer, AuthSerializer, UserInfoSerializer, EmailVerifySerializer, CustomTokenRefreshSerializer
 from .models import User
+
+class CustomTokenRefreshView(APIView):
+    serializer_class = CustomTokenRefreshSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+
+        if serializer.is_valid(raise_exception=False):
+            print(request.data['refresh'])
+            access_token = serializer.validated_data['access']
+            user = User.objects.get(token=request.data['refresh'])
+            res = Response({
+                "access" : access_token,
+                "user" : {
+                    "id" : user.id,
+                    "email":user.email,
+                },
+                "message" : "new access token"
+            }, status=status.HTTP_201_CREATED)
+            return res
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class EmailCheckView(APIView):
 
@@ -22,8 +44,6 @@ class EmailCheckView(APIView):
             }, status=status.HTTP_200_OK)
             
         return res
-
-
 
 class EmailVerifyView(APIView):
     serializer_class = EmailVerifySerializer
@@ -47,7 +67,7 @@ class EmailVerifyView(APIView):
 
     def get(self, request):       # DB에 인증 코드 존재 확인
         serializer = self.serializer_class(data=request.data)
-        code = request.query_params.get('code')
+        code = request.data['code']
         if serializer.is_valid(raise_exception=False):
             is_valid_code = serializer.verify_code(code)
             if is_valid_code:
