@@ -2,6 +2,8 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.http import Http404
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
+
 from .models import Post, Post_KR, SavedPosts
 from accounts.models import User
 
@@ -47,14 +49,20 @@ def apply_filters(queryset, filters):
 
 
 # 영어 post 저장
-def create_en_post(user_id, title, content, interest):
+def create_en_post(user_id, title, content, interest, instance=None):
     data = {
         "user_id": user_id,
         "title": title,
         "content": content,
         "interest": interest,
+        "updated_at": timezone.now(),
     }
-    serializer_en = PostSerializer(data=data)
+    # 인스턴스 값이 들어오면(PUT 요청) 그 인스턴스의 값 수정
+    if instance:
+        serializer_en = PostSerializer(instance, data=data)
+    else:
+        serializer_en = PostSerializer(data=data)
+
     if serializer_en.is_valid():
         serializer_en.save()
         return serializer_en
@@ -63,9 +71,19 @@ def create_en_post(user_id, title, content, interest):
 
 
 # 한국어 post 저장
-def create_kr_post(serializer_en, title, content):
-    data = {"post": serializer_en.data["post_id"], "title": title, "content": content}
-    serializer_kr = Post_KRSerializer(data=data)
+def create_kr_post(serializer_en, title, content, instance=None):
+    data = {
+        "post": serializer_en.data["post_id"],
+        "title": title,
+        "content": content,
+        "updated_at": timezone.now(),
+    }
+
+    if instance:
+        serializer_kr = Post_KRSerializer(instance, data=data)
+    else:
+        serializer_kr = Post_KRSerializer(data=data)
+
     if serializer_kr.is_valid():
         serializer_kr.save()
         return serializer_kr
@@ -73,6 +91,7 @@ def create_kr_post(serializer_en, title, content):
         return Response(serializer_en.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# 페이지네이션 클래스
 class CustomPageNumberPagination(PageNumberPagination):
     page_size = 5
     page_size_query_param = "page_size"
@@ -211,12 +230,13 @@ class PostDetail(APIView):
         return Response(data, status=status.HTTP_200_OK)
 
     def put(self, request, id):
-        post = get_object_or_404(Post, post_id=id)
+        post_en = get_object_or_404(Post, post_id=id)
+        post_kr = get_object_or_404(Post_KR, post=post_en)
         request.data["user_id"] = request.user.id
-        self.check_object_permissions(request, post)  # 작성자가 같은지 체크
+        self.check_object_permissions(request, post_en)  # 작성자가 같은지 체크
 
         # 삭제된 posts인지 확인
-        if post.is_deleted == True:
+        if post_en.is_deleted == True:
             return Response(
                 {"detail": "This post is deleted"}, status=status.HTTP_404_NOT_FOUND
             )
@@ -237,8 +257,12 @@ class PostDetail(APIView):
                 kr_content = translation_list[1].strip()
 
             # post에 값 저장
-            serializer_en = create_en_post(user_id, title, content, interest)
-            serializer_kr = create_kr_post(serializer_en, kr_title, kr_content)
+            serializer_en = create_en_post(
+                user_id, title, content, interest, instance=post_en
+            )
+            serializer_kr = create_kr_post(
+                serializer_en, kr_title, kr_content, instance=post_kr
+            )
 
             # en, kr 한 번에 담아서 response
             data = {
@@ -255,8 +279,12 @@ class PostDetail(APIView):
                 en_content = translation_list[1].strip()
 
             # post에 값 저장
-            serializer_en = create_en_post(user_id, en_title, en_content, interest)
-            serializer_kr = create_kr_post(serializer_en, title, content)
+            serializer_en = create_en_post(
+                user_id, en_title, en_content, interest, instance=post_en
+            )
+            serializer_kr = create_kr_post(
+                serializer_en, title, content, instance=post_kr
+            )
 
             data = {
                 "post_en": serializer_en.data,
@@ -296,12 +324,13 @@ class PostDetail(APIView):
 class SavePost(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]  # 로그인 해야만 post, delete 가능
 
-    def post(self, request, postid, userid):
+    def post(self, request, postId, userid):
         try:
             user = User.objects.get(pk=userid)
-            post_en = Post.objects.get(pk=postid)
+            post_en = Post.objects.get(pk=postId)
+            post_kr = Post_KR.objects.get(post=post_en)
 
-            data = {"user": user.pk, "post_en": post_en.pk, "post_kr": post_en.pk}
+            data = {"user": user.pk, "post_en": post_en.pk, "post_kr": post_kr.pk}
 
             serializer_saved = SavedPostsSerializer(data=data)
             if serializer_saved.is_valid():
@@ -316,10 +345,10 @@ class SavePost(APIView):
                 {"detail": "Post is not exist"}, status=status.HTTP_404_NOT_FOUND
             )
 
-    def delete(self, request, postid, userid):
+    def delete(self, request, postId, userid):
         try:
             user = User.objects.get(pk=userid)
-            post_en = Post.objects.get(pk=postid)
+            post_en = Post.objects.get(pk=postId)
 
             saved_post = SavedPosts.objects.filter(user=user, post_en=post_en).first()
 
