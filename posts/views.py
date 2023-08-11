@@ -45,6 +45,7 @@ def apply_filters(queryset, filters):
     if filters.get("nation"):
         queryset = queryset.filter(user_id__nation=filters.get("nation"))
 
+    queryset = queryset.filter(is_deleted=False)  # 삭제되지 않은 게시물만 필터링
     return queryset
 
 
