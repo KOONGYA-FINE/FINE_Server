@@ -245,7 +245,7 @@ class PostDetail(APIView):
         user_id = request.data.get("user_id")
         title = request.data.get("title")
         content = request.data.get("content")
-        interest = post_en.interest
+        interest = post_en.interest  # 이전에 작성되었던 interest 유지
         translation = request.data.get("translate")
 
         # 가져온 데이터의 language가 영어일 경우
