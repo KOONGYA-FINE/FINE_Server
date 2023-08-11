@@ -20,9 +20,9 @@ from rest_framework.permissions import IsAuthenticated
 class GetPosts(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, userid):
+    def get(self, request, userId):
         try:
-            posts_en = Post.objects.filter(user_id=userid)
+            posts_en = Post.objects.filter(user_id=userId)
             self.check_object_permissions(self.request, posts_en)
             serializer_en = PostSerializer(posts_en, many=True)
 
@@ -47,9 +47,9 @@ class GetPosts(APIView):
 class GetSavedPosts(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, userid):
+    def get(self, request, userId):
         try:
-            saved_posts = SavedPosts.objects.filter(user=userid)
+            saved_posts = SavedPosts.objects.filter(user=userId)
             self.check_object_permissions(self.request, saved_posts)
             serializer_saved = SavedPostsSerializer(saved_posts, many=True)
 
