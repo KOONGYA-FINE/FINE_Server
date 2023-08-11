@@ -18,6 +18,15 @@ class PostSerializer(serializers.ModelSerializer):
 
 
 class Post_KRSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source="post.user_id.username", read_only=True)
+    school = serializers.CharField(source="post.user_id.school", read_only=True)
+    gender = serializers.CharField(source="post.user_id.gender", read_only=True)
+    nation = serializers.IntegerField(source="post.user_id.nation_id", read_only=True)
+    profile_image = serializers.ImageField(
+        source="post.user_id.profile_image", read_only=True
+    )
+    interest = serializers.CharField(source="post.interest", read_only=True)
+
     class Meta:
         model = Post_KR
         fields = "__all__"
