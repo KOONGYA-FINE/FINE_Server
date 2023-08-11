@@ -93,7 +93,7 @@ def create_kr_post(serializer_en, title, content, instance=None):
 
 # 페이지네이션 클래스
 class CustomPageNumberPagination(PageNumberPagination):
-    page_size = 5
+    page_size = 10
     page_size_query_param = "page_size"
     max_page_size = 100
 
@@ -245,7 +245,7 @@ class PostDetail(APIView):
         user_id = request.data.get("user_id")
         title = request.data.get("title")
         content = request.data.get("content")
-        interest = request.data.get("interest")
+        interest = post_en.interest  # 이전에 작성되었던 interest 유지
         translation = request.data.get("translate")
 
         # 가져온 데이터의 language가 영어일 경우
