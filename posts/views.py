@@ -43,7 +43,8 @@ def apply_filters(queryset, filters):
         queryset = queryset.filter(user_id__gender=filters.get("gender"))
 
     if filters.get("nation"):
-        queryset = queryset.filter(user_id__nation=filters.get("nation"))
+        split_nation = filters.get("nation").split()
+        queryset = queryset.filter(user_id__nation__in=split_nation)
 
     queryset = queryset.filter(is_deleted=False)  # 삭제되지 않은 게시물만 필터링
     return queryset
@@ -354,6 +355,7 @@ class SavePost(APIView):
                     {
                         "saved_post": {
                             "detail": "Toggle complete",
+                            "id": saved_post.id,
                             "user": saved_post.user_id,
                             "post_en": saved_post.post_en_id,
                             "post_kr": saved_post.post_kr_id,
