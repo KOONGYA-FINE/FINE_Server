@@ -351,7 +351,16 @@ class SavePost(APIView):
                 saved_post.is_deleted = not saved_post.is_deleted
                 saved_post.save()
                 return Response(
-                    {"detail": "Toggle complete", "is_deleted": saved_post.is_deleted},
+                    {
+                        "saved_post": {
+                            "detail": "Toggle complete",
+                            "user": saved_post.user_id,
+                            "post_en": saved_post.post_en_id,
+                            "post_kr": saved_post.post_kr_id,
+                            "created_at": saved_post.created_at,
+                            "is_deleted": saved_post.is_deleted,
+                        }
+                    },
                     status=status.HTTP_200_OK,
                 )
             except SavedPosts.DoesNotExist:
