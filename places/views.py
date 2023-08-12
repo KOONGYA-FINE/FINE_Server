@@ -90,9 +90,15 @@ class PlaceList(APIView):
 # PlaceDetail(특정 값)
 class PlaceDetail(APIView):
     def get(self, request, id):
-        place = get_object_or_404(Place, post_id=id)
+        place = get_object_or_404(Place, place_id=id)
         serializer = PlaceSerializer(place)
-        return Response(serializer.data)
+        return Response(
+            {
+                "data" : serializer.data,
+                "message": "return place info"
+            },
+            status=status.HTTP_200_OK,
+        )
 
     def put(self, request, id):
         place = get_object_or_404(Place, post_id=id)
