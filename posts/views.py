@@ -147,7 +147,6 @@ class PostList(APIView):
                 "post_en": serializer_en.data,
                 "post_kr": serializer_kr.data if serializer_kr else [],
             }
-            print(data)
             if data["post_en"] and data["post_kr"] is not []:
                 return Response(data, status=status.HTTP_200_OK)
             else:
@@ -347,36 +346,48 @@ class SavePost(APIView):
             post_en = Post.objects.get(pk=postId)
             post_kr = Post_KR.objects.get(post=post_en)
 
-            data = {"user": user.pk, "post_en": post_en.pk, "post_kr": post_kr.pk}
-
-            serializer_saved = SavedPostsSerializer(data=data)
-            if serializer_saved.is_valid():
-                serializer_saved.save()
-                return Response(serializer_saved.data, status=status.HTTP_201_CREATED)
-            else:
+            try:
+                saved_post = SavedPosts.objects.get(user=user, post_en=post_en.pk)
+                saved_post.is_deleted = not saved_post.is_deleted
+                saved_post.save()
                 return Response(
-                    serializer_saved.errors, status=status.HTTP_400_BAD_REQUEST
+                    {"detail": "Toggle complete", "is_deleted": saved_post.is_deleted},
+                    status=status.HTTP_200_OK,
                 )
-        except:
+            except SavedPosts.DoesNotExist:
+                data = {"user": user.pk, "post_en": post_en.pk, "post_kr": post_kr.pk}
+
+                serializer_saved = SavedPostsSerializer(data=data)
+                if serializer_saved.is_valid():
+                    serializer_saved.save()
+                    return Response(
+                        serializer_saved.data, status=status.HTTP_201_CREATED
+                    )
+                else:
+                    return Response(
+                        serializer_saved.errors, status=status.HTTP_400_BAD_REQUEST
+                    )
+        except Exception as e:
             return Response(
-                {"detail": "Post is not exist"}, status=status.HTTP_404_NOT_FOUND
+                {"detail": f"An error occurred: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-    def delete(self, request, postId, userId):
-        try:
-            user = User.objects.get(pk=userId)
-            post_en = Post.objects.get(pk=postId)
+    # def delete(self, request, postId, userId):
+    #     try:
+    #         user = User.objects.get(pk=userId)
+    #         post_en = Post.objects.get(pk=postId)
 
-            saved_post = SavedPosts.objects.filter(user=user, post_en=post_en).first()
+    #         saved_post = SavedPosts.objects.filter(user=user, post_en=post_en).first()
 
-            if saved_post:
-                saved_post.is_deleted = True
-                saved_post.save()
-                return Response("DELETE complete", status=status.HTTP_204_NO_CONTENT)
-            else:
-                return Response(
-                    {"detail": "Saved post is not exist"},
-                    status=status.HTTP_404_NOT_FOUND,
-                )
-        except:
-            return Response({"detail": "Saved post is not exist"})
+    #         if saved_post:
+    #             saved_post.is_deleted = True
+    #             saved_post.save()
+    #             return Response("DELETE complete", status=status.HTTP_204_NO_CONTENT)
+    #         else:
+    #             return Response(
+    #                 {"detail": "Saved post is not exist"},
+    #                 status=status.HTTP_404_NOT_FOUND,
+    #             )
+    #     except:
+    #         return Response({"detail": "Saved post is not exist"})
