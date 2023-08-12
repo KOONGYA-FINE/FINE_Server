@@ -5,4 +5,5 @@ from places.views import *
 urlpatterns = [
     path("", PlaceList.as_view()),
     path("<int:id>/", PlaceDetail.as_view()),
+    path('search/', SearchPlace.as_view()),
 ]

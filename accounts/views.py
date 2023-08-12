@@ -18,7 +18,7 @@ class CustomTokenRefreshView(APIView):
             access_token = serializer.validated_data['access']
             user = User.objects.get(token=request.data['refresh'])
             res = Response({
-                "access" : access_token,
+                "access_token" : access_token,
                 "user" : {
                     "id" : user.id,
                     "email":user.email,
