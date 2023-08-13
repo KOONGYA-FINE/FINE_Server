@@ -173,10 +173,17 @@ class PostList(APIView):
             # 가져온 데이터의 language가 영어일 경우
             if language == "en":
                 # translation을 파싱하여(\n을 기준으로) 한국어 post에 값 저장
-                if "\n" in translation:
-                    translation_list = translation.split("\n", 1)
-                    kr_title = translation_list[0].strip()
-                    kr_content = translation_list[1].strip()
+                # if "\n" in translation:
+                #     translation_list = translation.split("\n", 1)
+                #     kr_title = translation_list[0].strip()
+                #     kr_content = translation_list[1].strip()
+
+                if translation["title"] == "":
+                    translation["title"] = "No title"
+                    title = "No title"
+
+                kr_title = translation["title"]
+                kr_content = translation["content"]
 
                 # post에 값 저장
                 serializer_en = create_en_post(user_id, title, content, interest)
@@ -192,10 +199,17 @@ class PostList(APIView):
             # 가져온 데이터의 language가 한국어일 경우 (translation == english) language가 영어일 경우와 반대
             else:
                 # 번역 데이터 파싱
-                if "\n" in translation:
-                    translation_list = translation.split("\n", 1)
-                    en_title = translation_list[0].strip()
-                    en_content = translation_list[1].strip()
+                # if "\n" in translation:
+                #     translation_list = translation.split("\n", 1)
+                #     en_title = translation_list[0].strip()
+                #     en_content = translation_list[1].strip()
+
+                if translation["title"] == "":
+                    translation["title"] = "No title"
+                    title = "No title"
+
+                en_title = translation["title"]
+                en_content = translation["content"]
 
                 # post에 값 저장
                 serializer_en = create_en_post(user_id, en_title, en_content, interest)
@@ -263,10 +277,17 @@ class PostDetail(APIView):
             # 가져온 데이터의 language가 영어일 경우
             if language == "en":
                 # translation을 파싱하여(\n을 기준으로) 한국어 post에 값 저장
-                if "\n" in translation:
-                    translation_list = translation.split("\n", 1)
-                    kr_title = translation_list[0].strip()
-                    kr_content = translation_list[1].strip()
+                # if "\n" in translation:
+                #     translation_list = translation.split("\n", 1)
+                #     kr_title = translation_list[0].strip()
+                #     kr_content = translation_list[1].strip()
+
+                if translation["title"] == "":
+                    translation["title"] = "No title"
+                    title = "No title"
+
+                kr_title = translation["title"]
+                kr_content = translation["content"]
 
                 # post에 값 저장
                 serializer_en = create_en_post(
@@ -285,10 +306,17 @@ class PostDetail(APIView):
 
             # 가져온 데이터의 language가 한국어일 경우 (translation == english) language가 영어일 경우와 반대
             else:
-                if "\n" in translation:
-                    translation_list = translation.split("\n", 1)
-                    en_title = translation_list[0].strip()
-                    en_content = translation_list[1].strip()
+                # if "\n" in translation:
+                #     translation_list = translation.split("\n", 1)
+                #     en_title = translation_list[0].strip()
+                #     en_content = translation_list[1].strip()
+
+                if translation["title"] == "":
+                    translation["title"] = "No title"
+                    title = "No title"
+
+                en_title = translation["title"]
+                en_content = translation["content"]
 
                 # post에 값 저장
                 serializer_en = create_en_post(
