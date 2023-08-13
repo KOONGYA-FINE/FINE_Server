@@ -1,5 +1,5 @@
 from django.db import models
-from accounts.models import Nation, User
+from accounts.models import User
 from config.settings import AWS_S3_CUSTOM_DOMAIN
 
 
@@ -9,7 +9,6 @@ class Place(models.Model):
     name = models.CharField(verbose_name="맛집 이름", max_length=100)
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
     score = models.FloatField(verbose_name="평점", default=0)  # 평점 - 리뷰 평점 평균
-    nation = models.ForeignKey(Nation, on_delete=models.CASCADE)
     address = models.CharField(verbose_name="주소명", max_length=300, default="")
     latitude = models.CharField(verbose_name="위도", max_length=20)
     longitude = models.CharField(verbose_name="경도", max_length=20)
