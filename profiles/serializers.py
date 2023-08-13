@@ -50,10 +50,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
     def get_data(self, user):
         data = {
             "username" : user.username,
-            "nation" : {
-                "en" : user.nation.name,
-                "kr" : user.nation.name_KR
-            } ,
             "birth" : user.birth,
             "school" : user.school,
             "gender" : user.gender,
