@@ -3,21 +3,19 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 
-# models
 from .models import Place
 from reviews.models import Review
 
-# serializer
 from .serializers import PlaceSerializer
 
-
-# DRF
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
-# 페이지네이션
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+
+
 
 class CustomPageNumberPagination(PageNumberPagination):
     page_size = 10
@@ -31,9 +29,7 @@ class SearchPlace(APIView):
         results = Place.objects.filter(
             Q(name__contains=keyword)|
             Q(address__contains=keyword)|
-            Q(tag__contains=keyword)|
-            Q(nation__name__contains=keyword)|
-            Q(nation__name_KR__contains=keyword)
+            Q(tag__contains=keyword)
         )
 
         if results.exists() :
@@ -61,6 +57,8 @@ class SearchPlace(APIView):
 
 # PlaceList(전체)
 class PlaceList(APIView):
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
     def get(self, request):
         places = Place.objects.all()
         paginator = CustomPageNumberPagination()
@@ -77,7 +75,6 @@ class PlaceList(APIView):
             status=status.HTTP_200_OK,
         )
 
-"""
     def post(self, request):
         serializer = PlaceSerializer(data=request.data)
         if serializer.is_valid():
@@ -85,7 +82,7 @@ class PlaceList(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-"""
+
 
 # PlaceDetail(특정 값)
 class PlaceDetail(APIView):
