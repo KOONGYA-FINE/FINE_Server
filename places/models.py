@@ -1,5 +1,5 @@
 from django.db import models
-from accounts.models import Nation, User
+from accounts.models import User
 from config.settings import AWS_S3_CUSTOM_DOMAIN
 
 
