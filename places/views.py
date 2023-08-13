@@ -5,7 +5,7 @@ from django.db.models import Q
 
 # models
 from .models import Place
-from accounts.models import Nation
+from reviews.models import Review
 
 # serializer
 from .serializers import PlaceSerializer
@@ -35,10 +35,14 @@ class SearchPlace(APIView):
             Q(nation__name__contains=keyword)|
             Q(nation__name_KR__contains=keyword)
         )
+
         if results.exists() :
             paginator = CustomPageNumberPagination()
             paginated_results = paginator.paginate_queryset(results, request)
             serializer = PlaceSerializer(paginated_results, many=True)
+            for i in range(len(serializer.data)):
+                serializer.data[i]['review'] = Review.objects.filter(place=serializer.data[i]['place_id']).count()
+
             return Response(
                 {
                     "data" : serializer.data,
@@ -59,24 +63,42 @@ class SearchPlace(APIView):
 class PlaceList(APIView):
     def get(self, request):
         places = Place.objects.all()
-        serializer = PlaceSerializer(places, many=True)
-        return Response(serializer.data)
+        paginator = CustomPageNumberPagination()
+        paginated_results = paginator.paginate_queryset(places, request)
+        serializer = PlaceSerializer(paginated_results, many=True)
+        for i in range(len(serializer.data)):
+            serializer.data[i]['review'] = Review.objects.filter(place=serializer.data[i]['place_id']).count()
 
-    def place(self, request):
+        return Response(
+            {
+                "data" : serializer.data,
+                "message": "return places list"
+            },
+            status=status.HTTP_200_OK,
+        )
+
+"""
+    def post(self, request):
         serializer = PlaceSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+"""
 
 # PlaceDetail(특정 값)
 class PlaceDetail(APIView):
     def get(self, request, id):
-        place = get_object_or_404(Place, post_id=id)
+        place = get_object_or_404(Place, place_id=id)
         serializer = PlaceSerializer(place)
-        return Response(serializer.data)
+        return Response(
+            {
+                "data" : serializer.data,
+                "message": "return place info"
+            },
+            status=status.HTTP_200_OK,
+        )
 
     def put(self, request, id):
         place = get_object_or_404(Place, post_id=id)
