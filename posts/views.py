@@ -322,7 +322,7 @@ class PostDetail(APIView):
                 )
 
             request.data["user_id"] = request.user.id
-            self.check_object_permissions(request, post_en)  # 작성자가 같은지 체크
+            self.check_object_permissions(self.request, post_en)  # 작성자가 같은지 체크
 
             post_en.is_deleted = True
             post_kr.is_deleted = True
