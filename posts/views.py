@@ -43,7 +43,8 @@ def apply_filters(queryset, filters):
         queryset = queryset.filter(user_id__gender=filters.get("gender"))
 
     if filters.get("nation"):
-        queryset = queryset.filter(user_id__nation=filters.get("nation"))
+        split_nation = filters.get("nation").split()
+        queryset = queryset.filter(user_id__nation__in=split_nation)
 
     queryset = queryset.filter(is_deleted=False)  # 삭제되지 않은 게시물만 필터링
     return queryset
@@ -321,7 +322,7 @@ class PostDetail(APIView):
                 )
 
             request.data["user_id"] = request.user.id
-            self.check_object_permissions(request, post_en)  # 작성자가 같은지 체크
+            self.check_object_permissions(self.request, post_en)  # 작성자가 같은지 체크
 
             post_en.is_deleted = True
             post_kr.is_deleted = True
@@ -351,7 +352,17 @@ class SavePost(APIView):
                 saved_post.is_deleted = not saved_post.is_deleted
                 saved_post.save()
                 return Response(
-                    {"detail": "Toggle complete", "is_deleted": saved_post.is_deleted},
+                    {
+                        "saved_post": {
+                            "detail": "Toggle complete",
+                            "id": saved_post.id,
+                            "user": saved_post.user_id,
+                            "post_en": saved_post.post_en_id,
+                            "post_kr": saved_post.post_kr_id,
+                            "created_at": saved_post.created_at,
+                            "is_deleted": saved_post.is_deleted,
+                        }
+                    },
                     status=status.HTTP_200_OK,
                 )
             except SavedPosts.DoesNotExist:
