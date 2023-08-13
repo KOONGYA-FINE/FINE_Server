@@ -2,10 +2,14 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404
 from posts.models import Post, Post_KR, SavedPosts
 from accounts.models import User
+from places.models import Place
+from reviews.models import Review, Review_KR
 
 # serializer
 from posts.serializers import PostSerializer, Post_KRSerializer, SavedPostsSerializer
 from .serializers import UserProfileSerializer
+from places.serializers import PlaceSerializer
+from reviews.serializers import ReviewSerializer, ReviewKRSerializer
 
 # DRF
 from rest_framework.views import APIView
@@ -26,13 +30,13 @@ class UserProfile(APIView):
             profile = User.objects.get(username=userName)
         else:
             return Response(
-                {
-                    "message": "user profile not found"
-                },
+                {"message": "user profile not found"},
                 status=status.HTTP_404_NOT_FOUND,
             )
         if serializer.is_valid():
-            self.check_object_permissions(self.request, userName) # userName과 관계없이 로그인 여부 확인
+            self.check_object_permissions(
+                self.request, userName
+            )  # userName과 관계없이 로그인 여부 확인
             if profile is not None:
                 if profile.is_active:
                     return Response(
@@ -43,9 +47,7 @@ class UserProfile(APIView):
                         status=status.HTTP_200_OK,
                     )
             return Response(
-                {
-                    "message": "user profile not found"
-                },
+                {"message": "user profile not found"},
                 status=status.HTTP_404_NOT_FOUND,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -55,21 +57,18 @@ class UserProfile(APIView):
             profile = User.objects.get(username=userName)
         else:
             return Response(
-                {
-                    "message": "user profile not found"
-                },
+                {"message": "user profile not found"},
                 status=status.HTTP_404_NOT_FOUND,
             )
         serializer = UserProfileSerializer(data=request.data)
         if serializer.is_valid():
-            self.check_object_permissions(self.request, profile)  # user_id와 관계없이 로그인 여부 확인
+            self.check_object_permissions(
+                self.request, profile
+            )  # user_id와 관계없이 로그인 여부 확인
 
             user = serializer.put_data(userName, request.data)
             return Response(
-                {
-                    "info": user, 
-                    "message": "user info update success"
-                },
+                {"info": user, "message": "user info update success"},
                 status=status.HTTP_202_ACCEPTED,
             )
 
@@ -80,18 +79,13 @@ class UserProfile(APIView):
             profile = User.objects.get(username=userName)
         else:
             return Response(
-                {
-                    "message": "user profile not found"
-                },
+                {"message": "user profile not found"},
                 status=status.HTTP_404_NOT_FOUND,
             )
         self.check_object_permissions(request, profile)
         User.objects.delete(request.user)
         return Response(
-            {
-                "message": "user delete success"
-            }, 
-            status=status.HTTP_204_NO_CONTENT
+            {"message": "user delete success"}, status=status.HTTP_204_NO_CONTENT
         )
 
 
@@ -130,11 +124,62 @@ class GetSavedPosts(APIView):
             # 스크랩된 게시물 필터링
             saved_posts = SavedPosts.objects.filter(user=userId, is_deleted=False)
 
+            saved_posts = saved_posts.order_by("-place_id")
+
             self.check_object_permissions(self.request, saved_posts)
             serializer_saved = SavedPostsSerializer(saved_posts, many=True)
 
-            data = {"post_en": serializer_saved.data}
+            data = {"saved_post": serializer_saved.data}
             return Response(data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class GetPlaces(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, userId):
+        try:
+            print(userId)
+            # 자신이 올린 맛집 필터링
+            places = Place.objects.filter(user_id=userId)
+            self.check_object_permissions(self.request, places)
+
+            serializer = PlaceSerializer(places, many=True)
+
+            data = {"places": serializer.data}
+            return Response(data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class GetReviews(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, userId):
+        try:
+            reviews_en = Review.objects.filter(user=userId)
+            self.check_object_permissions(self.request, reviews_en)
+            serializer_en = ReviewSerializer(reviews_en, many=True)
+
+            serializer_kr = None
+            if serializer_en.data:
+                review_id_list = [item["review_id"] for item in serializer_en.data]
+                reviews_kr = Review_KR.objects.filter(
+                    review__review_id__in=review_id_list
+                )
+                serializer_kr = ReviewKRSerializer(reviews_kr, many=True)
+
+            data = {
+                "review_en": serializer_en.data,
+                "review_kr": serializer_kr.data if serializer_kr else [],
+            }
+            return Response(data, status=status.HTTP_200_OK)
+
         except Exception as e:
             return Response(
                 {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
