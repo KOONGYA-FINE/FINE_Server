@@ -9,8 +9,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
     image = serializers.ImageField(required=False)
     sns = serializers.CharField(required=False)
     
-    def put_data(self, userId, data):  
-        saved = User.objects.get(id=userId)
+    def put_data(self, userName, data):  
+        saved = User.objects.get(username=userName)
         username = data.get('username', None)
         if username is None:
             username = saved.username
@@ -44,7 +44,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "image" : image,
             "sns" : sns
         }
-        user = User.objects.put_data(userId, data) 
+        user = User.objects.put_data(saved.id, data) 
         return self.get_data(user)
 
     def get_data(self, user):
