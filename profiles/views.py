@@ -2,10 +2,14 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404
 from posts.models import Post, Post_KR, SavedPosts
 from accounts.models import User
+from places.models import Place
+from reviews.models import Review, Review_KR
 
 # serializer
 from posts.serializers import PostSerializer, Post_KRSerializer, SavedPostsSerializer
 from .serializers import UserProfileSerializer
+from places.serializers import PlaceSerializer
+from reviews.serializers import ReviewSerializer, ReviewKRSerializer
 
 # DRF
 from rest_framework.views import APIView
@@ -112,8 +116,38 @@ class GetSavedPosts(APIView):
             self.check_object_permissions(self.request, saved_posts)
             serializer_saved = SavedPostsSerializer(saved_posts, many=True)
 
-            data = {"post_en": serializer_saved.data}
+            data = {"saved_post": serializer_saved.data}
             return Response(data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class GetPlaces(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, userId):
+        try:
+            places = Place.objects.filter(user_id=userId)
+
+            self.check_object_permissions(self.request, places)
+            serializer = PlaceSerializer(places, many=True)
+
+            data = {"places": serializer.data}
+            return Response(data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class GetReviews(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, userId):
+        try:
+            return 0
         except Exception as e:
             return Response(
                 {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
