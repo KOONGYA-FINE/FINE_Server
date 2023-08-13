@@ -124,6 +124,8 @@ class GetSavedPosts(APIView):
             # 스크랩된 게시물 필터링
             saved_posts = SavedPosts.objects.filter(user=userId, is_deleted=False)
 
+            saved_posts = saved_posts.order_by("-place_id")
+
             self.check_object_permissions(self.request, saved_posts)
             serializer_saved = SavedPostsSerializer(saved_posts, many=True)
 
@@ -140,9 +142,11 @@ class GetPlaces(APIView):
 
     def get(self, request, userId):
         try:
+            print(userId)
+            # 자신이 올린 맛집 필터링
             places = Place.objects.filter(user_id=userId)
-
             self.check_object_permissions(self.request, places)
+
             serializer = PlaceSerializer(places, many=True)
 
             data = {"places": serializer.data}
@@ -158,10 +162,24 @@ class GetReviews(APIView):
 
     def get(self, request, userId):
         try:
-            reviews = Review.objects.filter(user=userId)
+            reviews_en = Review.objects.filter(user=userId)
+            self.check_object_permissions(self.request, reviews_en)
+            serializer_en = ReviewSerializer(reviews_en, many=True)
 
-            self.check_object_permissions(self.request, reviews)
-            serializer = Review
+            serializer_kr = None
+            if serializer_en.data:
+                review_id_list = [item["review_id"] for item in serializer_en.data]
+                reviews_kr = Review_KR.objects.filter(
+                    review__review_id__in=review_id_list
+                )
+                serializer_kr = ReviewKRSerializer(reviews_kr, many=True)
+
+            data = {
+                "review_en": serializer_en.data,
+                "review_kr": serializer_kr.data if serializer_kr else [],
+            }
+            return Response(data, status=status.HTTP_200_OK)
+
         except Exception as e:
             return Response(
                 {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
