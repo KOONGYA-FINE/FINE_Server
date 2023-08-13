@@ -3,8 +3,6 @@ from .models import Review, Review_KR
 
 
 class ReviewSerializer(serializers.ModelSerializer):
-    review_image = serializers.ImageField(source="review.review_image", read_only=True)
-
     class Meta:
         model = Review
         fields = "__all__"
