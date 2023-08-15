@@ -156,10 +156,11 @@ class AuthSerializer(serializers.ModelSerializer):
 
     email = serializers.EmailField(required=True)
     password = serializers.CharField(required=True, write_only=True)
+    username = serializers.EmailField(read_only=True)
 
     class Meta:
         model = User
-        fields = ['email', 'password']
+        fields = ['email', 'password', 'username']
 
     def save_token(self, user, token):
         user = User.objects.put_token(user, token)
