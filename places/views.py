@@ -63,7 +63,6 @@ class PlaceList(APIView):
         paginator = CustomPageNumberPagination()
         paginated_results = paginator.paginate_queryset(places, request)
         serializer = PlaceSerializer(paginated_results, many=True)
-
         return Response(
             {
                 "data" : serializer.data,
@@ -77,7 +76,7 @@ class PlaceList(APIView):
         serializer = PlaceSerializer(data=request.data)
         if serializer.is_valid():
             place = serializer.create(request.data)
-            result={'id':place.id}
+            result={'message': 'review create success','id':place.id, 'username':request.user.username}
             result.update(serializer.data)
             return Response(result, status=status.HTTP_201_CREATED)
         else:
