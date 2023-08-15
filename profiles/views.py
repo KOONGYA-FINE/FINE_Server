@@ -142,12 +142,16 @@ class GetPlaces(APIView):
 
     def get(self, request, userId):
         try:
-            print(userId)
             # 자신이 올린 맛집 필터링
             places = Place.objects.filter(user_id=userId)
             self.check_object_permissions(self.request, places)
 
             serializer = PlaceSerializer(places, many=True)
+
+            if serializer.data == []:
+                return Response(
+                    {"detail": "No places to get"}, status=status.HTTP_404_NOT_FOUND
+                )
 
             data = {"places": serializer.data}
             return Response(data, status=status.HTTP_200_OK)
