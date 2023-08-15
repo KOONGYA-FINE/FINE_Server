@@ -53,6 +53,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "birth" : user.birth,
             "school" : user.school,
             "gender" : user.gender,
+            "nation" : user.nation.name,
+            "nation_KR" : user.nation.name_KR,
             "image" : str(user.profile_image),
             "sns" : user.sns_link,
             "date_joined" : user.date_joined,
