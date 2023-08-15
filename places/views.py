@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Q
 
 from .models import Place
-from reviews.models import Review
+from accounts.models import User
 
 from .serializers import PlaceSerializer
 
@@ -14,11 +14,11 @@ from rest_framework import status
 
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
-
+from config.permissions import IsWriterOrReadOnlyReview
 
 
 class CustomPageNumberPagination(PageNumberPagination):
-    page_size = 10
+    page_size = 9
     page_size_query_param = "page_size"
     max_page_size = 100
 
@@ -29,15 +29,14 @@ class SearchPlace(APIView):
         results = Place.objects.filter(
             Q(name__contains=keyword)|
             Q(address__contains=keyword)|
-            Q(tag__contains=keyword)
+            Q(tag__contains=keyword)|
+            Q(content__contains=keyword)
         )
 
         if results.exists() :
             paginator = CustomPageNumberPagination()
             paginated_results = paginator.paginate_queryset(results, request)
             serializer = PlaceSerializer(paginated_results, many=True)
-            for i in range(len(serializer.data)):
-                serializer.data[i]['review'] = Review.objects.filter(place=serializer.data[i]['place_id']).count()
 
             return Response(
                 {
@@ -64,8 +63,6 @@ class PlaceList(APIView):
         paginator = CustomPageNumberPagination()
         paginated_results = paginator.paginate_queryset(places, request)
         serializer = PlaceSerializer(paginated_results, many=True)
-        for i in range(len(serializer.data)):
-            serializer.data[i]['review'] = Review.objects.filter(place=serializer.data[i]['place_id']).count()
 
         return Response(
             {
@@ -76,18 +73,23 @@ class PlaceList(APIView):
         )
 
     def post(self, request):
+        request.data['user'] = request.user
         serializer = PlaceSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            place = serializer.create(request.data)
+            result={'id':place.id}
+            result.update(serializer.data)
+            return Response(result, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 # PlaceDetail(특정 값)
 class PlaceDetail(APIView):
+    permission_classes = [IsWriterOrReadOnlyReview]
+
     def get(self, request, id):
-        place = get_object_or_404(Place, place_id=id)
+        place = get_object_or_404(Place, id=id)
         serializer = PlaceSerializer(place)
         return Response(
             {
@@ -97,8 +99,21 @@ class PlaceDetail(APIView):
             status=status.HTTP_200_OK,
         )
 
-    def put(self, request, id):
-        place = get_object_or_404(Place, post_id=id)
+    def put(self, request, id):              # score, tag, content, image 수정 가능
+        place = get_object_or_404(Place, id=id)
+        self.check_object_permissions(self.request, place)
+        request.data['id'] = place.id
+        request.data['name'] = place.name
+        request.data['user'] = request.user
+        request.data['address'] = place.address
+        request.data['latitude'] = place.latitude
+        request.data['longitude'] = place.longitude
+
+        if request.data.get('score') is None:
+            request.data['score'] = place.score
+        if request.data.get('tag') is None:
+            request.data['tag'] = place.tag
+
         serializer = PlaceSerializer(place, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -106,7 +121,10 @@ class PlaceDetail(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request, id):
-        place = get_object_or_404(Place, post_id=id)
+    def delete(self, request, id): 
+        place = get_object_or_404(Place, id=id)
+        self.check_object_permissions(self.request, place)
         place.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({
+                "message" : "delete success"
+            }, status=status.HTTP_204_NO_CONTENT)
