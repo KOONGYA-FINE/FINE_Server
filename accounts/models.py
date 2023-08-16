@@ -77,7 +77,7 @@ class UserManager(BaseUserManager):
     def put_data(self, userId, data):
         user = User.objects.get(id=userId)
         user.username = data["username"]
-        user.profile_image = data["image"]
+        user.profile_image = data["profile_image"]
         user.sns_link = data["sns"]
         user.save(using=self._db)
         return user
