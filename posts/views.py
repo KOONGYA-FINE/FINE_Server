@@ -115,14 +115,12 @@ class PostList(APIView):
 
             # 영어 posts
             posts_en = Post.objects.all()
-            # 영어 정렬
-            if order:
-                posts_en = posts_en.order_by(order)
-
             # 한국어 posts
             posts_kr = Post_KR.objects.all()
-            # 한국어 정렬
+
+            # 정렬
             if order:
+                posts_en = posts_en.order_by(order)
                 posts_kr = posts_kr.order_by(order)
 
             # 적용 필터
