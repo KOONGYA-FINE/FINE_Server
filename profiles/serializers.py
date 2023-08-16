@@ -38,10 +38,22 @@ class UserProfileSerializer(serializers.ModelSerializer):
                 s3.upload_fileobj(image, AWS_STORAGE_BUCKET_NAME, image.name)
                 img_url = f"https://{AWS_S3_CUSTOM_DOMAIN}/{image.name}"
                 data['profile_image'] = img_url
-                return data
             except:
                 raise serializers.ValidationError("InValid Image File")
-        return data
+        else:
+            data._mutable = True        # profile_image 없으면
+            data['profile_image'] = profile.profile_image
+            data._mutable = False
+        sns = data.get('sns', None)
+        if sns is None:
+            data['sns'] = profile.sns
+
+        username = data.get('username', None)
+        if username is None:
+            data['username'] = profile.username
+
+        user = User.objects.put_data(profile.id, data)
+        return self.get_data(user)
 
         
     class Meta:
