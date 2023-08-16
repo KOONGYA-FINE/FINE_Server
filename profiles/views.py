@@ -124,7 +124,7 @@ class GetSavedPosts(APIView):
             # 스크랩된 게시물 필터링
             saved_posts = SavedPosts.objects.filter(user=userId, is_deleted=False)
 
-            saved_posts = saved_posts.order_by("-place_id")
+            saved_posts = saved_posts.order_by("-id")
 
             self.check_object_permissions(self.request, saved_posts)
             serializer_saved = SavedPostsSerializer(saved_posts, many=True)
