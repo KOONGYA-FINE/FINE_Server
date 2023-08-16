@@ -31,7 +31,7 @@ class PlaceSerializer(serializers.ModelSerializer):
             try:
                 s3.upload_fileobj(image, AWS_STORAGE_BUCKET_NAME, image.name)
                 img_url = f"https://{AWS_S3_CUSTOM_DOMAIN}/{image.name}"
-                data['image'] = image.name
+                data['image'] = img_url
                 return data
             except:
                 raise serializers.ValidationError("Invalid Image File")
