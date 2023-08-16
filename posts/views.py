@@ -115,14 +115,12 @@ class PostList(APIView):
 
             # 영어 posts
             posts_en = Post.objects.all()
-            # 영어 정렬
-            if order:
-                posts_en = posts_en.order_by(order)
-
             # 한국어 posts
             posts_kr = Post_KR.objects.all()
-            # 한국어 정렬
+
+            # 정렬
             if order:
+                posts_en = posts_en.order_by(order)
                 posts_kr = posts_kr.order_by(order)
 
             # 적용 필터
@@ -169,6 +167,17 @@ class PostList(APIView):
             content = request.data.get("content")
             interest = request.data.get("interest")
             translation = request.data.get("translate")
+
+            if (
+                user_id == None
+                or title == None
+                or content == None
+                or translation == None
+            ):
+                return Response(
+                    {"detail": "you need to write user_id, title, content, translate"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             # 가져온 데이터의 language가 영어일 경우
             if language == "en":
