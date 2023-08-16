@@ -38,10 +38,10 @@ class SearchPlace(APIView):
         keyword = request.query_params.get("q")
 
         results = Place.objects.filter(
-            Q(name__contains=keyword)
-            | Q(address__contains=keyword)
-            | Q(tag__contains=keyword)
-            | Q(content__contains=keyword)
+            Q(name__icontains=keyword)
+            | Q(address__icontains=keyword)
+            | Q(tag__icontains=keyword)
+            | Q(content__icontains=keyword)
         )
 
         if results.exists():
