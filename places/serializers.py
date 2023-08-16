@@ -7,6 +7,7 @@ class PlaceSerializer(serializers.ModelSerializer):
     name = serializers.CharField(required=True)
     user = serializers.IntegerField(source="user.id", read_only = True)
     username = serializers.CharField(source="user.username", read_only = True)
+    user_image = serializers.ImageField(source="user.profile_image", read_only = True)
     score = serializers.IntegerField(required=True)
     address = serializers.CharField(required=True)
     latitude = serializers.CharField(required=True)
