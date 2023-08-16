@@ -6,46 +6,10 @@ import boto3
 VALID_IMAGE_EXTENSIONS = [ "jpg", "jpeg", "png", "gif", ]
 class UserProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(required=False)
-    image = serializers.ImageField(required=False)
+    profile_image = serializers.CharField(required=False)
     sns = serializers.CharField(required=False)
-    
-    def put_data(self, userName, data):  
-        saved = User.objects.get(username=userName)
-        username = data.get('username', None)
-        if username is None:
-            username = saved.username
-        elif User.objects.filter(username=username) and username is not saved.username:
-            raise serializers.ValidationError("username already exists")
-        
-        image = data.get('image', None)
-        sns = data.get('sns', None)
-
-        if image is not None:
-            if not image.name.split('.')[-1].lower() in VALID_IMAGE_EXTENSIONS:
-                serializers.ValidationError("Not an Image File")
-            s3 = boto3.client('s3',
-                aws_access_key_id = AWS_ACCESS_KEY_ID,
-                aws_secret_access_key = AWS_SECRET_ACCESS_KEY,
-                region_name = AWS_REGION)
-            try:
-                s3.upload_fileobj(image, AWS_STORAGE_BUCKET_NAME, image.name)
-                img_url = f"https://{AWS_S3_CUSTOM_DOMAIN}/{image.name}"
-                data['profile_image'] = img_url
-            except:
-                raise serializers.ValidationError("InValid Image File")
-        else:
-            image = saved.profile_image
-
-        if sns is None:
-            sns = saved.sns_link
-
-        data = {
-            "username" : username,
-            "image" : image,
-            "sns" : sns
-        }
-        user = User.objects.put_data(saved.id, data) 
-        return self.get_data(user)
+    school = serializers.CharField(read_only=True)
+    gender = serializers.CharField(read_only=True)
 
     def get_data(self, user):
         data = {
@@ -61,6 +25,26 @@ class UserProfileSerializer(serializers.ModelSerializer):
         }
         return data
     
+    def validate(self, data): 
+        image = data.get('profile_image', None)
+        print(image)
+        if image is not None:
+
+            if not image.name.split('.')[-1].lower() in VALID_IMAGE_EXTENSIONS:
+                serializers.ValidationError("Not an Image File")
+            s3 = boto3.client('s3',
+                aws_access_key_id = AWS_ACCESS_KEY_ID,
+                aws_secret_access_key = AWS_SECRET_ACCESS_KEY,
+                region_name = AWS_REGION)
+            try:
+                s3.upload_fileobj(image, AWS_STORAGE_BUCKET_NAME, image.name)
+                img_url = f"https://{AWS_S3_CUSTOM_DOMAIN}/{image.name}"
+                data['profile_image'] = img_url
+                print(img_url)
+                return data
+            except:
+                raise serializers.ValidationError("InValid Image File")
+        return data
     class Meta:
         model = User
-        exclude = ['email', 'password', 'token', 'last_login', 'gender', 'school', 'nation']
+        exclude = ['email', 'password', 'token', 'last_login', 'is_superuser', 'is_admin', 'is_staff', 'is_active', 'is_allowed', 'groups', 'user_permissions']

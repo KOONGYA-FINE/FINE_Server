@@ -100,7 +100,7 @@ class Nation(models.Model):
     nation_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
     name_KR = models.CharField(max_length=100)
-    image = models.ImageField(upload_to="")
+    image = models.CharField(max_length=100)
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -111,12 +111,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     nation = models.ForeignKey(Nation, on_delete=models.CASCADE, blank=True, null=True)
     birth = models.DateField(verbose_name="생년월일", null=True)
     school = models.CharField(verbose_name="학교", max_length=100)
-    profile_image = models.ImageField(
-        verbose_name="프로필 이미지",
-        blank=True,
-        upload_to="",
-        default=f"https://{AWS_S3_CUSTOM_DOMAIN}/FINE_LOGO.png",
-    )  # S3
+    profile_image = models.CharField(default="https://{AWS_S3_CUSTOM_DOMAIN}/FINE_LOGO.png", max_length=100)  # S3
     sns_link = models.CharField(verbose_name="sns 계정", max_length=100, null=True)
     gender = models.CharField(verbose_name="성별", max_length=1)
     token = models.CharField(max_length=300)
