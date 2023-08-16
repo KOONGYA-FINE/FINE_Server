@@ -9,8 +9,8 @@ class Place(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     score = models.IntegerField(verbose_name="평점", default=0)
     address = models.CharField(verbose_name="주소명", max_length=300, default="")
-    latitude = models.CharField(verbose_name="위도", max_length=20)
-    longitude = models.CharField(verbose_name="경도", max_length=20)
+    latitude = models.FloatField(verbose_name="위도", max_length=20)
+    longitude = models.FloatField(verbose_name="경도", max_length=20)
     tag = models.CharField(verbose_name="태그", max_length=100)
     content = models.CharField(verbose_name="리뷰", max_length=200)
     image = models.ImageField(
