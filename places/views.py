@@ -69,6 +69,7 @@ class PlaceList(APIView):
         filters = {"tag": tag}
         places = Place.objects.all()
         places = apply_filters(places, filters)
+        places = places.order_by("-id")  # 내림차순 정렬
         paginator = CustomPageNumberPagination()
         paginated_results = paginator.paginate_queryset(places, request)
         serializer = PlaceListSerializer(paginated_results, many=True)
@@ -79,13 +80,13 @@ class PlaceList(APIView):
 
     def post(self, request):
         request.data._mutable = True
-        request.data['user'] = User.objects.get(email=request.user).id
+        request.data["user"] = User.objects.get(email=request.user).id
         request.data._mutable = False
         serializer = PlaceSerializer(data=request.data)
         if serializer.is_valid():
             place = serializer.save()
-            result={'message': 'review create success'}
-            result.update({'data':serializer.data})
+            result = {"message": "review create success"}
+            result.update({"data": serializer.data})
             return Response(result, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
