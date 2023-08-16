@@ -77,13 +77,13 @@ class PlaceImageSerializer(serializers.ModelSerializer):
     def update(self, place, data):
         
         score = data.get('score', None)
-        if score is None:
+        if score is None or score == '':
             score = place.score
         tag = data.get("tag", None)
-        if tag is None:
+        if tag is None or tag == '':
             tag = place.tag
         content = data.get('content', None)
-        if content is None:
+        if content is None or content == '':
             content = place.content
 
         image = data.get('image', None)
@@ -110,7 +110,6 @@ class PlaceImageSerializer(serializers.ModelSerializer):
         place.save()
 
         return self.get_data(place)
-
     
     class Meta:
         model = Place
