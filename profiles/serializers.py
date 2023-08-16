@@ -6,7 +6,7 @@ import boto3
 VALID_IMAGE_EXTENSIONS = [ "jpg", "jpeg", "png", "gif", ]
 class UserProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(required=False)
-    profile_image = serializers.CharField(required=False)
+    profile_image = serializers.ImageField(required=False)
     sns = serializers.CharField(required=False)
     school = serializers.CharField(read_only=True)
     gender = serializers.CharField(read_only=True)
@@ -27,7 +27,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
     
     def validate(self, data): 
         image = data.get('profile_image', None)
-        print(image)
         if image is not None:
 
             if not image.name.split('.')[-1].lower() in VALID_IMAGE_EXTENSIONS:

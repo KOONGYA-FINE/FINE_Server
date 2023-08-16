@@ -31,10 +31,10 @@ class PlaceSerializer(serializers.ModelSerializer):
             try:
                 s3.upload_fileobj(image, AWS_STORAGE_BUCKET_NAME, image.name)
                 img_url = f"https://{AWS_S3_CUSTOM_DOMAIN}/{image.name}"
-                data['image'] = img_url
+                data['image'] = image.name
                 return data
             except:
-                raise serializers.ValidationError("InValid Image File")
+                raise serializers.ValidationError("Invalid Image File")
         return data
     class Meta:
         model = Place
