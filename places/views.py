@@ -69,6 +69,7 @@ class PlaceList(APIView):
         filters = {"tag": tag}
         places = Place.objects.all()
         places = apply_filters(places, filters)
+        places = places.order_by("-id")  # 내림차순 정렬
         paginator = CustomPageNumberPagination()
         paginated_results = paginator.paginate_queryset(places, request)
         serializer = PlaceSerializer(paginated_results, many=True)
@@ -89,7 +90,6 @@ class PlaceList(APIView):
             return Response(result, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 # PlaceDetail(특정 값)
 class PlaceDetail(APIView):
