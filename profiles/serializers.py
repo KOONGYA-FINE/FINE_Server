@@ -52,8 +52,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
             data._mutable = False
 
         username = data.get('username', None)
-        print(type(username))
-        print(username)
         if username is None or username == '':
             data._mutable = True
             data['username'] = profile.username

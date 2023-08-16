@@ -79,7 +79,7 @@ class PlaceList(APIView):
 
     def post(self, request):
         request.data._mutable = True
-        request.data['user'] = User.objects.get(email=request.user).id
+        request.data['user'] = request.user.id
         request.data._mutable = False
         serializer = PlaceImageSerializer(data=request.data)
         if serializer.is_valid():
@@ -107,15 +107,15 @@ class PlaceDetail(APIView):
         place = get_object_or_404(Place, id=id)
         self.check_object_permissions(request, place)
         request.data._mutable=True
-        request.data.update({'id':id, 'name':place.name, 'address':place.address, 'longitude':place.longitude, 'latitude':place.latitude, 'user':request.user.id})
+        request.data['user'] = request.user.id
+        request.data.update({'id':id, 'name':place.name, 'address':place.address, 'longitude':place.longitude, 'latitude':place.latitude})
         request.data._mutable=False
         serializer = PlaceImageSerializer(place, data=request.data)
         
         if serializer.is_valid():
             
-            place = serializer.save()
-            print(serializer.data)
-            result={'message': 'review modify success'}
+            place = serializer.update(place, request.data)
+            result={'message': 'review put request success'}
             result.update({'data':serializer.data})
             return Response(result, status=status.HTTP_200_OK)
         else:

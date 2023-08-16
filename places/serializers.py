@@ -17,6 +17,7 @@ class PlaceSerializer(serializers.ModelSerializer):
 class PlaceImageSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only = True)
     name = serializers.CharField(required=True)
+    user_id = serializers.IntegerField(source="user.id", read_only = True)
     username = serializers.CharField(source="user.username", read_only = True)
     user_image = serializers.CharField(source="user.profile_image", read_only = True)
     score = serializers.IntegerField(required=True)
@@ -56,8 +57,7 @@ class PlaceImageSerializer(serializers.ModelSerializer):
         if content is None:
             content = place.content
 
-        image = self.validate(data).get('image', None)
-        print(image)
+        image = data.get('image', None)
         if image is None:
             image = place.image
 
@@ -72,8 +72,8 @@ class PlaceImageSerializer(serializers.ModelSerializer):
     
     def validate(self, data): 
         image = data.get('image')
+        print(type(image))
         if image is not None:
-
             if not image.name.split('.')[-1].lower() in VALID_IMAGE_EXTENSIONS:
                 serializers.ValidationError("Not an Image File")
             s3 = boto3.client('s3',
