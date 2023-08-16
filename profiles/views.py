@@ -98,6 +98,11 @@ class GetPosts(APIView):
             self.check_object_permissions(self.request, posts_en)
             serializer_en = PostSerializer(posts_en, many=True)
 
+            if serializer_en.data == []:
+                return Response(
+                    {"detail": "No posts to get"}, status=status.HTTP_404_NOT_FOUND
+                )
+
             serializer_kr = None
             if serializer_en.data:
                 post_id_list = [item["post_id"] for item in serializer_en.data]
@@ -124,10 +129,15 @@ class GetSavedPosts(APIView):
             # 스크랩된 게시물 필터링
             saved_posts = SavedPosts.objects.filter(user=userId, is_deleted=False)
 
-            saved_posts = saved_posts.order_by("-place_id")
+            saved_posts = saved_posts.order_by("-id")
 
             self.check_object_permissions(self.request, saved_posts)
             serializer_saved = SavedPostsSerializer(saved_posts, many=True)
+
+            if serializer_saved.data == []:
+                return Response(
+                    {"detail": "No saved post to get"}, status=status.HTTP_404_NOT_FOUND
+                )
 
             data = {"saved_post": serializer_saved.data}
             return Response(data, status=status.HTTP_200_OK)
@@ -148,6 +158,7 @@ class GetPlaces(APIView):
 
             serializer = PlaceSerializer(places, many=True)
 
+            # 등록한 맛집이 없는 경우 에러처리
             if serializer.data == []:
                 return Response(
                     {"detail": "No places to get"}, status=status.HTTP_404_NOT_FOUND

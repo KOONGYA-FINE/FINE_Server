@@ -22,7 +22,7 @@ class CustomTokenRefreshView(APIView):
                 "user" : {
                     "id" : user.id,
                     "email": user.email,
-                    "username": user.username
+                    "username": user.username,
                 },
                 "message" : "new access token"
             }, status=status.HTTP_201_CREATED)
