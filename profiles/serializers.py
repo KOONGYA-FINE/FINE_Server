@@ -44,13 +44,20 @@ class UserProfileSerializer(serializers.ModelSerializer):
             data._mutable = True        # profile_image 없으면
             data['profile_image'] = profile.profile_image
             data._mutable = False
+
         sns = data.get('sns', None)
-        if sns is None:
-            data['sns'] = profile.sns
+        if sns is None or sns == '':
+            data._mutable = True
+            data['sns'] = profile.sns_link
+            data._mutable = False
 
         username = data.get('username', None)
-        if username is None:
+        print(type(username))
+        print(username)
+        if username is None or username == '':
+            data._mutable = True
             data['username'] = profile.username
+            data._mutable = False
 
         user = User.objects.put_data(profile.id, data)
         return self.get_data(user)
