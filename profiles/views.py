@@ -66,9 +66,9 @@ class UserProfile(APIView):
                 self.request, profile
             )  # user_id와 관계없이 로그인 여부 확인
 
-            serializer.update(profile, request.data)
+            serializer.save()
             return Response(
-                {"info": serializer.data, "message": "user info update success"},
+                {"info": serializer.get_data(profile), "message": "user info update success"},
                 status=status.HTTP_202_ACCEPTED,
             )
 
