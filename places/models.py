@@ -13,11 +13,6 @@ class Place(models.Model):
     longitude = models.FloatField(verbose_name="경도", max_length=20)
     tag = models.CharField(verbose_name="태그", max_length=100)
     content = models.CharField(verbose_name="리뷰", max_length=200)
-    image = models.ImageField(
-        verbose_name="맛집 이미지",
-        blank=True,
-        upload_to="",
-        default=f"https://{AWS_S3_CUSTOM_DOMAIN}/FINE_LOGO.png",
-    )  # S3
+    image = models.CharField(default="https://{AWS_S3_CUSTOM_DOMAIN}/FINE_LOGO.png", max_length=100)  # S3
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

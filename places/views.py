@@ -78,15 +78,11 @@ class PlaceList(APIView):
         )
 
     def post(self, request):
-        request.data["user"] = request.user
+        request.data['user'] = User.objects.get(email=request.user).id
         serializer = PlaceSerializer(data=request.data)
         if serializer.is_valid():
-            place = serializer.create(request.data)
-            result = {
-                "message": "review create success",
-                "id": place.id,
-                "username": request.user.username,
-            }
+            place = serializer.save()
+            result={'message': 'review create success','id':place.id, 'username':request.user.username}
             result.update(serializer.data)
             return Response(result, status=status.HTTP_201_CREATED)
         else:
