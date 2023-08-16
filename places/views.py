@@ -82,8 +82,10 @@ class PlaceList(APIView):
         serializer = PlaceSerializer(data=request.data)
         if serializer.is_valid():
             place = serializer.save()
+            print(place.image)
             result={'message': 'review create success','id':place.id, 'username':request.user.username}
             result.update(serializer.data)
+            print(serializer.data['image'])
             return Response(result, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
