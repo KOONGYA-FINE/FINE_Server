@@ -83,9 +83,9 @@ class PlaceList(APIView):
         request.data._mutable = False
         serializer = PlaceImageSerializer(data=request.data)
         if serializer.is_valid():
-            place = serializer.save()
+            info = serializer.create(request.data)
             result={'message': 'review create success'}
-            result.update({'data':serializer.data})
+            result.update({'data':info})
             return Response(result, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -113,10 +113,9 @@ class PlaceDetail(APIView):
         serializer = PlaceImageSerializer(place, data=request.data)
         
         if serializer.is_valid():
-            
             place = serializer.update(place, request.data)
             result={'message': 'review put request success'}
-            result.update({'data':serializer.data})
+            result.update({'data':place})
             return Response(result, status=status.HTTP_200_OK)
         else:
             request.data._mutable=False
