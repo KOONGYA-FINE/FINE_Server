@@ -168,6 +168,17 @@ class PostList(APIView):
             interest = request.data.get("interest")
             translation = request.data.get("translate")
 
+            if (
+                user_id == None
+                or title == None
+                or content == None
+                or translation == None
+            ):
+                return Response(
+                    {"detail": "you need to write user_id, title, content, translate"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
             # 가져온 데이터의 language가 영어일 경우
             if language == "en":
                 # translation을 파싱하여(\n을 기준으로) 한국어 post에 값 저장
