@@ -148,6 +148,7 @@ class GetPlaces(APIView):
 
             serializer = PlaceSerializer(places, many=True)
 
+            # 등록한 맛집이 없는 경우 에러처리
             if serializer.data == []:
                 return Response(
                     {"detail": "No places to get"}, status=status.HTTP_404_NOT_FOUND
