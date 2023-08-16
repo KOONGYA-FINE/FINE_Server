@@ -80,17 +80,16 @@ class PlaceList(APIView):
 
     def post(self, request):
         request.data._mutable = True
-        request.data["user"] = User.objects.get(email=request.user).id
+        request.data['user'] = request.user.id
         request.data._mutable = False
         serializer = PlaceImageSerializer(data=request.data)
         if serializer.is_valid():
-            place = serializer.save()
-            result = {"message": "review create success"}
-            result.update({"data": serializer.data})
+            info = serializer.create(request.data)
+            result={'message': 'review create success'}
+            result.update({'data':info})
             return Response(result, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 # PlaceDetail(특정 값)
 class PlaceDetail(APIView):
@@ -108,16 +107,15 @@ class PlaceDetail(APIView):
         place = get_object_or_404(Place, id=id)
         self.check_object_permissions(request, place)
         request.data._mutable=True
-        request.data.update({'id':id, 'name':place.name, 'address':place.address, 'longitude':place.longitude, 'latitude':place.latitude, 'user':request.user.id})
+        request.data['user'] = request.user.id
+        request.data.update({'id':id, 'name':place.name, 'address':place.address, 'longitude':place.longitude, 'latitude':place.latitude})
         request.data._mutable=False
         serializer = PlaceImageSerializer(place, data=request.data)
         
         if serializer.is_valid():
-            
-            place = serializer.save()
-            print(serializer.data)
-            result={'message': 'review modify success'}
-            result.update({'data':serializer.data})
+            place = serializer.update(place, request.data)
+            result={'message': 'review put request success'}
+            result.update({'data':place})
             return Response(result, status=status.HTTP_200_OK)
         else:
             request.data._mutable=False
