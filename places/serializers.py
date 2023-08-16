@@ -12,7 +12,7 @@ class PlaceListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Place
         fields = "__all__"
-        
+
 class PlaceSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only = True)
     name = serializers.CharField(required=True)

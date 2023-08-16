@@ -78,7 +78,9 @@ class PlaceList(APIView):
         )
 
     def post(self, request):
+        request.data._mutable = True
         request.data['user'] = User.objects.get(email=request.user).id
+        request.data._mutable = False
         serializer = PlaceSerializer(data=request.data)
         if serializer.is_valid():
             place = serializer.save()
