@@ -92,9 +92,10 @@ class UserProfile(APIView):
 class GetPosts(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, userId):
+    def get(self, request, userName):
         try:
-            posts_en = Post.objects.filter(user_id=userId, is_deleted=False)
+            user = User.objects.get(username=userName)
+            posts_en = Post.objects.filter(user_id=user.id, is_deleted=False)
             self.check_object_permissions(self.request, posts_en)
             serializer_en = PostSerializer(posts_en, many=True)
 
@@ -124,11 +125,12 @@ class GetPosts(APIView):
 class GetSavedPosts(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, userId):
+    def get(self, request, userName):
         try:
             # 스크랩된 게시물 필터링
-            saved_posts = SavedPosts.objects.filter(user=userId, is_deleted=False)
-
+            user = User.objects.get(username=userName)
+            saved_posts = SavedPosts.objects.filter(user_id=user.id, is_deleted=False)
+            print(saved_posts)
             saved_posts = saved_posts.order_by("-id")
 
             self.check_object_permissions(self.request, saved_posts)
@@ -150,10 +152,11 @@ class GetSavedPosts(APIView):
 class GetPlaces(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, userId):
+    def get(self, request, userName):
         try:
             # 자신이 올린 맛집 필터링
-            places = Place.objects.filter(user_id=userId)
+            user = User.objects.get(username=userName)
+            places = Place.objects.filter(user_id=user.id)
             self.check_object_permissions(self.request, places)
 
             serializer = PlaceSerializer(places, many=True)
@@ -175,9 +178,10 @@ class GetPlaces(APIView):
 class GetReviews(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, userId):
+    def get(self, request, userName):
         try:
-            reviews_en = Review.objects.filter(user=userId)
+            user = User.objects.get(username=userName)
+            reviews_en = Review.objects.filter(user=user.id)
             self.check_object_permissions(self.request, reviews_en)
             serializer_en = ReviewSerializer(reviews_en, many=True)
 
