@@ -6,7 +6,7 @@ from django.db.models import Q
 from .models import Place
 from accounts.models import User
 
-from .serializers import PlaceSerializer
+from .serializers import PlaceSerializer, PlaceListSerializer
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -71,7 +71,7 @@ class PlaceList(APIView):
         places = apply_filters(places, filters)
         paginator = CustomPageNumberPagination()
         paginated_results = paginator.paginate_queryset(places, request)
-        serializer = PlaceSerializer(paginated_results, many=True)
+        serializer = PlaceListSerializer(paginated_results, many=True)
         return Response(
             {"data": serializer.data, "message": "return places list"},
             status=status.HTTP_200_OK,
@@ -82,10 +82,8 @@ class PlaceList(APIView):
         serializer = PlaceSerializer(data=request.data)
         if serializer.is_valid():
             place = serializer.save()
-            print(place.image)
-            result={'message': 'review create success','id':place.id, 'username':request.user.username}
-            result.update(serializer.data)
-            print(serializer.data['image'])
+            result={'message': 'review create success'}
+            result.update({'data':serializer.data})
             return Response(result, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -97,7 +95,7 @@ class PlaceDetail(APIView):
 
     def get(self, request, id):
         place = get_object_or_404(Place, id=id)
-        serializer = PlaceSerializer(place)
+        serializer = PlaceListSerializer(place)
         return Response(
             {"data": serializer.data, "message": "return place info"},
             status=status.HTTP_200_OK,
