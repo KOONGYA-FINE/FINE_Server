@@ -98,6 +98,11 @@ class GetPosts(APIView):
             self.check_object_permissions(self.request, posts_en)
             serializer_en = PostSerializer(posts_en, many=True)
 
+            if serializer_en.data == []:
+                return Response(
+                    {"detail": "No posts to get"}, status=status.HTTP_404_NOT_FOUND
+                )
+
             serializer_kr = None
             if serializer_en.data:
                 post_id_list = [item["post_id"] for item in serializer_en.data]
@@ -128,6 +133,11 @@ class GetSavedPosts(APIView):
 
             self.check_object_permissions(self.request, saved_posts)
             serializer_saved = SavedPostsSerializer(saved_posts, many=True)
+
+            if serializer_saved.data == []:
+                return Response(
+                    {"detail": "No saved post to get"}, status=status.HTTP_404_NOT_FOUND
+                )
 
             data = {"saved_post": serializer_saved.data}
             return Response(data, status=status.HTTP_200_OK)
