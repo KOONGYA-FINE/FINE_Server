@@ -25,10 +25,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
         }
         return data
     
-    def validate(self, data): 
+    def update(self, profile, data):
         image = data.get('profile_image', None)
         if image is not None:
-
             if not image.name.split('.')[-1].lower() in VALID_IMAGE_EXTENSIONS:
                 serializers.ValidationError("Not an Image File")
             s3 = boto3.client('s3',
@@ -43,6 +42,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
             except:
                 raise serializers.ValidationError("InValid Image File")
         return data
+
+        
     class Meta:
         model = User
         exclude = ['email', 'password', 'token', 'last_login', 'is_superuser', 'is_admin', 'is_staff', 'is_active', 'is_allowed', 'groups', 'user_permissions']

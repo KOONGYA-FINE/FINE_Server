@@ -60,13 +60,13 @@ class UserProfile(APIView):
                 {"message": "user profile not found"},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        serializer = UserProfileSerializer(profile, data=request.data)
+        serializer = UserProfileSerializer()
         if serializer.is_valid():
             self.check_object_permissions(
                 self.request, profile
             )  # user_id와 관계없이 로그인 여부 확인
 
-            serializer.save()
+            serializer.update(profile, request.data)
             return Response(
                 {"info": serializer.get_data(profile), "message": "user info update success"},
                 status=status.HTTP_202_ACCEPTED,
