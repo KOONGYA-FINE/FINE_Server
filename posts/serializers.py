@@ -8,7 +8,7 @@ class PostSerializer(serializers.ModelSerializer):
     school = serializers.CharField(source="user_id.school", read_only=True)
     gender = serializers.CharField(source="user_id.gender", read_only=True)
     nation = serializers.IntegerField(source="user_id.nation_id", read_only=True)
-    profile_image = serializers.ImageField(
+    profile_image = serializers.CharField(
         source="user_id.profile_image", read_only=True
     )
 
@@ -22,7 +22,7 @@ class Post_KRSerializer(serializers.ModelSerializer):
     school = serializers.CharField(source="post.user_id.school", read_only=True)
     gender = serializers.CharField(source="post.user_id.gender", read_only=True)
     nation = serializers.IntegerField(source="post.user_id.nation_id", read_only=True)
-    profile_image = serializers.ImageField(
+    profile_image = serializers.CharField(
         source="post.user_id.profile_image", read_only=True
     )
     interest = serializers.CharField(source="post.interest", read_only=True)
