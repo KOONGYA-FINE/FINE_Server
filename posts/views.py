@@ -315,7 +315,9 @@ class PostDetail(APIView):
         try:
             post_en = get_object_or_404(Post, post_id=id)
             post_kr = get_object_or_404(Post_KR, post=post_en)
-
+            saved_post = SavedPosts.objects.get(
+                post_en=post_en.pk, user=request.user.id
+            )
             # 삭제된 posts인지 확인
             if post_en.is_deleted == True:
                 return Response(
@@ -331,6 +333,10 @@ class PostDetail(APIView):
 
             post_en.save()
             post_kr.save()
+
+            if saved_post:
+                saved_post.is_deleted = True
+                saved_post.save()
 
             return Response("DELETE complete", status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
