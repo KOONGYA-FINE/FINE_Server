@@ -95,6 +95,9 @@ def create_kr_post(serializer_en, title, content, instance=None):
 
 # translation 파싱
 def parsing_translation(translation, language):
+    if not translation:
+        return "제목 없음" if language == "en" else "No title", ""
+
     if "\n" in translation:
         translation_list = translation.split("\n", 1)
         translated_title = translation_list[0].strip()
@@ -105,6 +108,7 @@ def parsing_translation(translation, language):
     elif language == "en":
         translated_title = "제목 없음"
         translated_content = translation
+
     return translated_title, translated_content
 
 
