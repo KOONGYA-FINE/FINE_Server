@@ -102,7 +102,7 @@ def parsing_translation(translation, language):
         translation_list = translation.split("\n", 1)
         translated_title = translation_list[0].strip()
         translated_content = translation_list[1].strip()
-    elif language == "kr":
+    elif language == "kr" or "ko":
         translated_title = "No title"
         translated_content = translation
     elif language == "en":
