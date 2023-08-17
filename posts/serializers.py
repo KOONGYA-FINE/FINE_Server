@@ -33,6 +33,9 @@ class Post_KRSerializer(serializers.ModelSerializer):
 
 
 class SavedPostsSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source="user.username", read_only=True)
+    title = serializers.CharField(source="post_en.title", read_only=True)
+
     class Meta:
         model = SavedPosts
         fields = "__all__"

@@ -130,7 +130,6 @@ class GetSavedPosts(APIView):
             # 스크랩된 게시물 필터링
             user = User.objects.get(username=userName)
             saved_posts = SavedPosts.objects.filter(user_id=user.id, is_deleted=False)
-            print(saved_posts)
             saved_posts = saved_posts.order_by("-id")
 
             self.check_object_permissions(self.request, saved_posts)
