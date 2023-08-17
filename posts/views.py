@@ -93,6 +93,15 @@ def create_kr_post(serializer_en, title, content, instance=None):
         return Response(serializer_en.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# translation 파싱
+def parsing_translation(translation):
+    if "\n" in translation:
+        translation_list = translation.split("\n", 1)
+        translated_title = translation_list[0].strip()
+        translated_content = translation_list[1].strip()
+    return translated_title, translated_content
+
+
 # 페이지네이션 클래스
 class CustomPageNumberPagination(PageNumberPagination):
     page_size = 10
@@ -107,19 +116,20 @@ class PostList(APIView):
     # Tag로 필터링 + 페이지네이션 + 정렬 -> 영어 한국어 게시물 모두 response
     def get(self, request):
         try:
-            order = "-post_id"  # 정렬 기본값
             interest = request.query_params.get("interest")
             gender = request.query_params.get("gender")
             nation = request.query_params.get("nation")
             order = request.query_params.get("order")
 
-            # 영어 posts
+            if order is None:
+                order = "-post_id"
+
+            # posts 모두 가져옴
             posts_en = Post.objects.all()
-            # 한국어 posts
             posts_kr = Post_KR.objects.all()
 
             # 정렬
-            if order:
+            if order is not None:
                 posts_en = posts_en.order_by(order)
                 posts_kr = posts_kr.order_by(order)
 
@@ -136,8 +146,7 @@ class PostList(APIView):
 
             # 한국어 게시물 데이터 처리
             serializer_kr = None
-            if serializer_en.data:
-                # 한국어 posts 중 필터링된 영어 post와 짝꿍 게시물 필터링
+            if serializer_en.data:  # 한국어 posts 중 필터링된 영어 post와 짝꿍 게시물 필터링
                 post_id_list = [item["post_id"] for item in serializer_en.data]
                 posts_kr = posts_kr.filter(post__post_id__in=post_id_list)
                 serializer_kr = Post_KRSerializer(posts_kr, many=True)
@@ -182,16 +191,12 @@ class PostList(APIView):
             # 가져온 데이터의 language가 영어일 경우
             if language == "en":
                 # translation을 파싱하여(\n을 기준으로) 한국어 post에 값 저장
-                if "\n" in translation:
-                    translation_list = translation.split("\n", 1)
-                    kr_title = translation_list[0].strip()
-                    kr_content = translation_list[1].strip()
+                kr_title, kr_content = parsing_translation(translation)
 
                 # post에 값 저장
                 serializer_en = create_en_post(user_id, title, content, interest)
                 serializer_kr = create_kr_post(serializer_en, kr_title, kr_content)
 
-                # en, kr 한 번에 담아서 response
                 data = {
                     "post_en": serializer_en.data,
                     "post_kr": serializer_kr.data,
@@ -201,10 +206,7 @@ class PostList(APIView):
             # 가져온 데이터의 language가 한국어일 경우 (translation == english) language가 영어일 경우와 반대
             else:
                 # 번역 데이터 파싱
-                if "\n" in translation:
-                    translation_list = translation.split("\n", 1)
-                    en_title = translation_list[0].strip()
-                    en_content = translation_list[1].strip()
+                en_title, en_content = parsing_translation(translation)
 
                 # post에 값 저장
                 serializer_en = create_en_post(user_id, en_title, en_content, interest)
@@ -271,11 +273,7 @@ class PostDetail(APIView):
 
             # 가져온 데이터의 language가 영어일 경우
             if language == "en":
-                # translation을 파싱하여(\n을 기준으로) 한국어 post에 값 저장
-                if "\n" in translation:
-                    translation_list = translation.split("\n", 1)
-                    kr_title = translation_list[0].strip()
-                    kr_content = translation_list[1].strip()
+                kr_title, kr_content = parsing_translation(translation)
 
                 # post에 값 저장
                 serializer_en = create_en_post(
@@ -291,13 +289,8 @@ class PostDetail(APIView):
                     "post_kr": serializer_kr.data,
                 }
                 return Response(data, status.HTTP_201_CREATED)
-
-            # 가져온 데이터의 language가 한국어일 경우 (translation == english) language가 영어일 경우와 반대
             else:
-                if "\n" in translation:
-                    translation_list = translation.split("\n", 1)
-                    en_title = translation_list[0].strip()
-                    en_content = translation_list[1].strip()
+                en_title, en_content = parsing_translation(translation)
 
                 # post에 값 저장
                 serializer_en = create_en_post(
