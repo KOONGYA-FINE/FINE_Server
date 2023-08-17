@@ -38,15 +38,17 @@ class SearchPlace(APIView):
         keyword = request.query_params.get("q")
         tag = request.query_params.get("tag")
         filters = {"tag": tag}
+        query = Q()
 
-        results = Place.objects.filter(
-            Q(name__icontains=keyword)
-            | Q(address__icontains=keyword)
-            | Q(tag__icontains=keyword)
-            | Q(content__icontains=keyword)
-        )
+        if keyword:
+            query |= Q(name__icontains=keyword)
+            query |= Q(address__icontains=keyword)
+            query |= Q(tag__icontains=keyword)
+            query |= Q(content__icontains=keyword)
+        results = Place.objects.filter(query)
 
-        results = apply_filters(results, filters)
+        if tag:
+            results = apply_filters(results, filters)
 
         if results.exists():
             paginator = CustomPageNumberPagination()
