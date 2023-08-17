@@ -94,11 +94,17 @@ def create_kr_post(serializer_en, title, content, instance=None):
 
 
 # translation 파싱
-def parsing_translation(translation):
+def parsing_translation(translation, language):
     if "\n" in translation:
         translation_list = translation.split("\n", 1)
         translated_title = translation_list[0].strip()
         translated_content = translation_list[1].strip()
+    elif language == "kr":
+        translated_title = "No title"
+        translated_content = translation
+    elif language == "en":
+        translated_title = "제목 없음"
+        translated_content = translation
     return translated_title, translated_content
 
 
@@ -191,7 +197,7 @@ class PostList(APIView):
             # 가져온 데이터의 language가 영어일 경우
             if language == "en":
                 # translation을 파싱하여(\n을 기준으로) 한국어 post에 값 저장
-                kr_title, kr_content = parsing_translation(translation)
+                kr_title, kr_content = parsing_translation(translation, language)
 
                 # post에 값 저장
                 serializer_en = create_en_post(user_id, title, content, interest)
@@ -206,7 +212,7 @@ class PostList(APIView):
             # 가져온 데이터의 language가 한국어일 경우 (translation == english) language가 영어일 경우와 반대
             else:
                 # 번역 데이터 파싱
-                en_title, en_content = parsing_translation(translation)
+                en_title, en_content = parsing_translation(translation, language)
 
                 # post에 값 저장
                 serializer_en = create_en_post(user_id, en_title, en_content, interest)
@@ -273,7 +279,7 @@ class PostDetail(APIView):
 
             # 가져온 데이터의 language가 영어일 경우
             if language == "en":
-                kr_title, kr_content = parsing_translation(translation)
+                kr_title, kr_content = parsing_translation(translation, language)
 
                 # post에 값 저장
                 serializer_en = create_en_post(
@@ -290,7 +296,7 @@ class PostDetail(APIView):
                 }
                 return Response(data, status.HTTP_201_CREATED)
             else:
-                en_title, en_content = parsing_translation(translation)
+                en_title, en_content = parsing_translation(translation, language)
 
                 # post에 값 저장
                 serializer_en = create_en_post(
@@ -315,9 +321,7 @@ class PostDetail(APIView):
         try:
             post_en = get_object_or_404(Post, post_id=id)
             post_kr = get_object_or_404(Post_KR, post=post_en)
-            saved_post = SavedPosts.objects.get(
-                post_en=post_en.pk, user=request.user.id
-            )
+
             # 삭제된 posts인지 확인
             if post_en.is_deleted == True:
                 return Response(
@@ -334,9 +338,15 @@ class PostDetail(APIView):
             post_en.save()
             post_kr.save()
 
-            if saved_post:
-                saved_post.is_deleted = True
-                saved_post.save()
+            try:
+                saved_post = SavedPosts.objects.get(
+                    post_en=post_en.pk, user=request.user.id
+                )
+                if saved_post:
+                    saved_post.is_deleted = True
+                    saved_post.save()
+            except SavedPosts.DoesNotExist:
+                pass
 
             return Response("DELETE complete", status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
