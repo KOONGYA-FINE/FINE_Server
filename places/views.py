@@ -36,6 +36,8 @@ class CustomPageNumberPagination(PageNumberPagination):
 class SearchPlace(APIView):
     def get(self, request):
         keyword = request.query_params.get("q")
+        tag = request.query_params.get("tag")
+        filters = {"tag": tag}
 
         results = Place.objects.filter(
             Q(name__icontains=keyword)
@@ -43,6 +45,8 @@ class SearchPlace(APIView):
             | Q(tag__icontains=keyword)
             | Q(content__icontains=keyword)
         )
+
+        results = apply_filters(results, filters)
 
         if results.exists():
             paginator = CustomPageNumberPagination()
@@ -80,16 +84,17 @@ class PlaceList(APIView):
 
     def post(self, request):
         request.data._mutable = True
-        request.data['user'] = request.user.id
+        request.data["user"] = request.user.id
         request.data._mutable = False
         serializer = PlaceImageSerializer(data=request.data)
         if serializer.is_valid():
             info = serializer.create(request.data)
-            result={'message': 'review create success'}
-            result.update({'data':info})
+            result = {"message": "review create success"}
+            result.update({"data": info})
             return Response(result, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 # PlaceDetail(특정 값)
 class PlaceDetail(APIView):
@@ -106,19 +111,27 @@ class PlaceDetail(APIView):
     def put(self, request, id):  # score, tag, content, image 수정 가능
         place = get_object_or_404(Place, id=id)
         self.check_object_permissions(request, place)
-        request.data._mutable=True
-        request.data['user'] = request.user.id
-        request.data.update({'id':id, 'name':place.name, 'address':place.address, 'longitude':place.longitude, 'latitude':place.latitude})
-        request.data._mutable=False
+        request.data._mutable = True
+        request.data["user"] = request.user.id
+        request.data.update(
+            {
+                "id": id,
+                "name": place.name,
+                "address": place.address,
+                "longitude": place.longitude,
+                "latitude": place.latitude,
+            }
+        )
+        request.data._mutable = False
         serializer = PlaceImageSerializer(place, data=request.data)
-        
+
         if serializer.is_valid():
             place = serializer.update(place, request.data)
-            result={'message': 'review put request success'}
-            result.update({'data':place})
+            result = {"message": "review put request success"}
+            result.update({"data": place})
             return Response(result, status=status.HTTP_200_OK)
         else:
-            request.data._mutable=False
+            request.data._mutable = False
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, id):
