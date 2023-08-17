@@ -33,7 +33,7 @@ class Post_KRSerializer(serializers.ModelSerializer):
 
 
 class SavedPostsSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(source="user.username", read_only=True)
+    username = serializers.CharField(source="post_en.user_id.username", read_only=True)
     title_en = serializers.CharField(source="post_en.title", read_only=True)
     title_kr = serializers.CharField(source="post_kr.title", read_only=True)
 
