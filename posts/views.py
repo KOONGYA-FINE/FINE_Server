@@ -350,9 +350,10 @@ class SavePost(APIView):
             post_kr = Post_KR.objects.get(post=post_en)
 
             try:
-                saved_post = SavedPosts.objects.get(user=user, post_en=post_en.pk)
+                saved_post = SavedPosts.objects.get(user=user.pk, post_en=post_en.pk)
                 saved_post.is_deleted = not saved_post.is_deleted
                 saved_post.save()
+
                 return Response(
                     {
                         "saved_post": {
@@ -369,8 +370,8 @@ class SavePost(APIView):
                 )
             except SavedPosts.DoesNotExist:
                 data = {"user": user.pk, "post_en": post_en.pk, "post_kr": post_kr.pk}
-
                 serializer_saved = SavedPostsSerializer(data=data)
+
                 if serializer_saved.is_valid():
                     serializer_saved.save()
                     return Response(
