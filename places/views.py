@@ -6,7 +6,7 @@ from django.db.models import Q
 from .models import Place
 from accounts.models import User
 
-from .serializers import PlaceSerializer, PlaceListSerializer
+from .serializers import PlaceSerializer, PlaceImageSerializer
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -38,10 +38,10 @@ class SearchPlace(APIView):
         keyword = request.query_params.get("q")
 
         results = Place.objects.filter(
-            Q(name__contains=keyword)
-            | Q(address__contains=keyword)
-            | Q(tag__contains=keyword)
-            | Q(content__contains=keyword)
+            Q(name__icontains=keyword)
+            | Q(address__icontains=keyword)
+            | Q(tag__icontains=keyword)
+            | Q(content__icontains=keyword)
         )
 
         if results.exists():
@@ -72,7 +72,7 @@ class PlaceList(APIView):
         places = places.order_by("-id")  # 내림차순 정렬
         paginator = CustomPageNumberPagination()
         paginated_results = paginator.paginate_queryset(places, request)
-        serializer = PlaceListSerializer(paginated_results, many=True)
+        serializer = PlaceSerializer(paginated_results, many=True)
         return Response(
             {"data": serializer.data, "message": "return places list"},
             status=status.HTTP_200_OK,
@@ -80,17 +80,16 @@ class PlaceList(APIView):
 
     def post(self, request):
         request.data._mutable = True
-        request.data["user"] = User.objects.get(email=request.user).id
+        request.data['user'] = request.user.id
         request.data._mutable = False
-        serializer = PlaceSerializer(data=request.data)
+        serializer = PlaceImageSerializer(data=request.data)
         if serializer.is_valid():
-            place = serializer.save()
-            result = {"message": "review create success"}
-            result.update({"data": serializer.data})
+            info = serializer.create(request.data)
+            result={'message': 'review create success'}
+            result.update({'data':info})
             return Response(result, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 # PlaceDetail(특정 값)
 class PlaceDetail(APIView):
@@ -98,7 +97,7 @@ class PlaceDetail(APIView):
 
     def get(self, request, id):
         place = get_object_or_404(Place, id=id)
-        serializer = PlaceListSerializer(place)
+        serializer = PlaceSerializer(place)
         return Response(
             {"data": serializer.data, "message": "return place info"},
             status=status.HTTP_200_OK,
@@ -106,24 +105,20 @@ class PlaceDetail(APIView):
 
     def put(self, request, id):  # score, tag, content, image 수정 가능
         place = get_object_or_404(Place, id=id)
-        self.check_object_permissions(self.request, place)
-        request.data["id"] = place.id
-        request.data["name"] = place.name
-        request.data["user"] = request.user
-        request.data["address"] = place.address
-        request.data["latitude"] = place.latitude
-        request.data["longitude"] = place.longitude
-
-        if request.data.get("score") is None:
-            request.data["score"] = place.score
-        if request.data.get("tag") is None:
-            request.data["tag"] = place.tag
-
-        serializer = PlaceSerializer(place, data=request.data)
+        self.check_object_permissions(request, place)
+        request.data._mutable=True
+        request.data['user'] = request.user.id
+        request.data.update({'id':id, 'name':place.name, 'address':place.address, 'longitude':place.longitude, 'latitude':place.latitude})
+        request.data._mutable=False
+        serializer = PlaceImageSerializer(place, data=request.data)
+        
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            place = serializer.update(place, request.data)
+            result={'message': 'review put request success'}
+            result.update({'data':place})
+            return Response(result, status=status.HTTP_200_OK)
         else:
+            request.data._mutable=False
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, id):
