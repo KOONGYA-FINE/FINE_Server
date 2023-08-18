@@ -1,4 +1,7 @@
 from django.urls import path
-from places.views import *
+from reviews.views import *
 
-urlpatterns = []
+urlpatterns = [
+    path("", ReviewList.as_view()),
+    path("<int:reviewId>/", ReviewDetail.as_view()),
+]

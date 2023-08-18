@@ -4,10 +4,33 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from .serializers import RegisterSerializer, AuthSerializer, UserInfoSerializer
+from .serializers import RegisterSerializer, AuthSerializer, UserInfoSerializer, EmailVerifySerializer, CustomTokenRefreshSerializer
 from .models import User
 
-class EmailVerificationView(APIView):
+class CustomTokenRefreshView(APIView):
+    serializer_class = CustomTokenRefreshSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+
+        if serializer.is_valid(raise_exception=False):
+            print(request.data['refresh'])
+            access_token = serializer.validated_data['access']
+            user = User.objects.get(token=request.data['refresh'])
+            res = Response({
+                "access_token" : access_token,
+                "user" : {
+                    "id" : user.id,
+                    "email": user.email,
+                    "username": user.username,
+                },
+                "message" : "new access token"
+            }, status=status.HTTP_201_CREATED)
+            return res
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class EmailCheckView(APIView):
 
     def get(self, request, email):
         if User.objects.filter(email=email).exists():
@@ -22,7 +45,50 @@ class EmailVerificationView(APIView):
             }, status=status.HTTP_200_OK)
             
         return res
-        
+
+class EmailVerifyView(APIView):
+    serializer_class = EmailVerifySerializer
+
+    def post(self, request):     # 인증 코드 생성 및 메일 발송s
+        serializer = self.serializer_class(data=request.data)
+        email = request.data['email']
+        if serializer.is_valid(raise_exception=False):
+            serializer.send_code(email)
+            
+            res = Response(
+                {
+                    "user":serializer.data,
+                    "message":"email sending success",
+                },
+                status=status.HTTP_201_CREATED,
+            )
+            return res
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request):       # DB에 인증 코드 존재 확인
+        serializer = self.serializer_class(data=request.data)
+        code = request.query_params.get('code')
+        if serializer.is_valid(raise_exception=False):
+            is_valid_code = serializer.verify_code(code)
+            if is_valid_code:
+                res = Response(
+                    {
+                        "message":"code verification success",
+                    },
+                    status=status.HTTP_202_ACCEPTED,
+                )
+            else:
+                res = Response(
+                    {
+                        "message":"code verification failed",
+                    },
+                    status=status.HTTP_406_NOT_ACCEPTABLE,
+                )
+            return res
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 class RegisterView(APIView):
     serializer_class = RegisterSerializer
 
@@ -55,9 +121,7 @@ class UserInfoView(APIView):
     serializer_class = UserInfoSerializer
 
     def put(self, request):
-
         serializer = self.serializer_class(data=request.data)
-        print("activate")
 
         if serializer.is_valid(raise_exception=False):
             if User.objects.filter(email=request.user).exists():
@@ -84,13 +148,15 @@ class AuthView(APIView):
             user = serializer.validated_data['user']
             access_token = serializer.validated_data['access_token']
             refresh_token = serializer.validated_data['refresh_token']
-            serializer.save_token(user, refresh_token)
+            data = serializer.save_token(user, refresh_token)
 
-            res = Response(
+            if data:
+                res = Response(
                 {
                     "user": {
                             "id":user.id,
                             "email":user.email,
+                            "username":user.username
                     },
                     "message":"login success",
                     "token":{
@@ -98,15 +164,36 @@ class AuthView(APIView):
                         "refresh_token":refresh_token,
                     },
                 },
-                status=status.HTTP_200_OK,
-            )
-            res.set_cookie("access-token", access_token, httponly=True)
-            res.set_cookie("refresh-token", refresh_token, httponly=True)
+                    status=status.HTTP_200_OK,
+                )
+                res.set_cookie("access-token", access_token, httponly=True)
+                res.set_cookie("refresh-token", refresh_token, httponly=True)
+            else:
+               res = Response(
+                {
+                    "user": {
+                            "id":user.id,
+                            "email":user.email,
+                    },
+                    "message":"need to insert user_info",
+                    "token":{
+                        "access_token":access_token,
+                        "refresh_token":refresh_token,
+                    },
+                },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+               res.set_cookie("access-token", access_token, httponly=True)
+               res.set_cookie("refresh-token", refresh_token, httponly=True)
+
             return res
+            
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
     def delete(self, request):
+        user = User.objects.delete_token(request.user)
+
         res = Response({
 			"message":"logout success"
 		}, status=status.HTTP_202_ACCEPTED)

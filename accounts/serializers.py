@@ -1,6 +1,97 @@
+from django.shortcuts import render
 from rest_framework_simplejwt.serializers import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework import serializers
-from .models import User, Nation
+from .models import User, Nation, EmailCode, generate_code, expire_dt
+from config.settings import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, SES_SENDER
+from django.utils import timezone
+
+import boto3
+import botocore
+
+class CustomTokenRefreshSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+    access = serializers.CharField(read_only=True)
+    token_class = RefreshToken
+
+    def validate(self, attrs):
+        try:
+            refresh = self.token_class(attrs["refresh"])
+            data = {"access": str(refresh.access_token)}
+        except TokenError:
+            raise serializers.ValidationError('invalid or expired token')
+            
+        return data
+
+def send_email(to_email, code):
+    client = boto3.client('ses',
+                aws_access_key_id = AWS_ACCESS_KEY_ID,
+                aws_secret_access_key = AWS_SECRET_ACCESS_KEY,
+                region_name = AWS_REGION)
+    sender = SES_SENDER
+
+    content = render(None, "email.html", {"code": code}).content.decode("utf-8") 
+
+    try:
+        response = client.send_email(
+            Source = sender,
+            Destination={
+                "ToAddresses": [
+                    to_email,
+                ],
+            },
+            Message={
+                "Body": {
+                    "Html": {
+                        "Charset": "UTF-8",
+                        "Data": content,
+                    },
+                    "Text": {
+                        "Charset": "UTF-8",
+                        "Data": f"인증번호를 입력해주세요.\n인증번호: {code}",
+                    },
+                },
+                "Subject": {
+                    "Charset": "UTF-8",
+                    "Data": "[FINE] Email Address Verification Code",
+                },
+            },
+            
+        )
+        print("success")
+    except botocore.exceptions.ClientError as e:
+        print(e.response["Error"]["Message"])
+    else:
+        print("Email sent! Message ID:"),
+        print(response["MessageId"])
+
+
+class EmailVerifySerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(required=False)
+
+    class Meta: 
+        model = EmailCode
+        exclude = ['code']
+
+    def send_code(self, email):
+        if EmailCode.objects.filter(email=email).exists():      # 재전송
+            new_code = generate_code()
+            EmailCode.objects.filter(email=email).update(code=new_code, expired_dt=expire_dt())
+            send_email(to_email=email, code=new_code)
+            
+        else:   # 신규 전송
+            email_code = EmailCode.objects.create(email=email)
+            send_email(to_email=email, code=email_code.code)
+    
+    def verify_code(self, code):
+        if EmailCode.objects.filter(code=code).exists():
+            verify = EmailCode.objects.get(code=code)
+            if verify.expired_dt > timezone.now():
+                verify.is_verified = True
+                verify.save()
+            return verify.is_verified
+        else:
+            return False
 
 class RegisterSerializer(serializers.ModelSerializer):
 
@@ -9,7 +100,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        exclude = ['password']
+        fields = ['email', 'password']
 
     def create(self, validated_data):
         user = User.objects.create_user(
@@ -19,8 +110,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
     
     def save_token(self, user, token):
-        user = User.objects.put_token(user, token)
-        return user
+        user_permission = User.objects.put_token(user, token)
+        return user_permission
 
     def validate(self, data):
         email = data.get('email', None)
@@ -65,10 +156,11 @@ class AuthSerializer(serializers.ModelSerializer):
 
     email = serializers.EmailField(required=True)
     password = serializers.CharField(required=True, write_only=True)
+    username = serializers.EmailField(read_only=True)
 
     class Meta:
         model = User
-        fields = ['email', 'password']
+        fields = ['email', 'password', 'username']
 
     def save_token(self, user, token):
         user = User.objects.put_token(user, token)
@@ -99,12 +191,10 @@ class AuthSerializer(serializers.ModelSerializer):
 
         return data
 
-
-
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = "__all__"
+        exclude = ["token", "is_staff", "is_admin", "is_superuser", "is_active", "is_allowed", "date_joined", "password", "last_login", "birth", "groups", "user_permissions"]
 
 class NationSerializer(serializers.ModelSerializer):
     class Meta:
